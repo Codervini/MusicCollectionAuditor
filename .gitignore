@@ -1,0 +1,9 @@
+*.log
+*csv
+*xlsx
+tools/__pycache__
+logs_test/
+.python-version
+.plan
+.env
+.vscode/
