@@ -11,13 +11,13 @@ import send2trash
 CONFIG_CONSTANTS = dotenv_values(".env")
 
 def csvFormatter(name):
-    return f'logs_test/{name} {datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.csv'
+    return str(Path("data","output",f'{name} {str(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))}.csv'))
 
 def writeAllToExcel(song_full_path,fail_record_lookup):
     if CONFIG_CONSTANTS["QCLEVEL_3_CENTRAL_EXCEL"]:
         excel_file = CONFIG_CONSTANTS["QCLEVEL_3_CENTRAL_EXCEL"]
     else:
-        excel_file =  Path("data","song list.xlsx")
+        excel_file =  Path("data", "output","All Songs list.xlsx")
 
     if Path(excel_file).exists():
         wb = openpyxl.load_workbook(excel_file)
@@ -65,7 +65,7 @@ def writeAllToCSV(song_full_path, fail_record_lookup):
                     writer.writerow([str(Path(*i[:-1])), i[-1],fail_record_lookup.get(tuple(i), "Clean")])
         return True
     else:
-        csv_file = csvFormatter("all_songs")
+        csv_file = csvFormatter("All Songs list")
         with open(csv_file,"a") as f:
             writer = csv.writer(f,delimiter=",")
             if not is_header_available:

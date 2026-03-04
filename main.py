@@ -5,7 +5,18 @@ import logging
 import datetime
 import re
 from tools.QualityChecker import QualityChecker
-LOG_FILE=f"{datetime.date.today()}.log"
+
+if not Path("data").exists():
+    Path("data").mkdir()
+if not Path("data","log").exists():
+    Path("data","log").mkdir()
+if not Path("data","output").exists():
+    Path("data","output").mkdir()
+if not Path("data","stage").exists():
+    Path("data","stage").mkdir()
+LOG_FILE=str(Path("data","log",f"{str(datetime.date.today())}.log"))
+
+    
 
 logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE,filemode="w",
                     format="%(asctime)s - %(levelname)s - %(message)s")
