@@ -65,7 +65,7 @@ def writeAllToCSV(song_full_path, fail_record_lookup):
                     writer.writerow([str(Path(*i[:-1])), i[-1],fail_record_lookup.get(tuple(i), "Clean")])
         return True
     else:
-        csv_file = csvFormatter("All Songs list")
+        csv_file = Path("data", "output","All Songs list.csv")
         with open(csv_file,"a") as f:
             writer = csv.writer(f,delimiter=",")
             if not is_header_available:
@@ -249,4 +249,4 @@ Your choice: """).strip())
     except FileNotFoundError as e:
         logging.error(f"FLAC-authenticity CSV report not given {e}")
 
-# QualityChecker("Lossless Audio Checker.log",CONFIG_CONSTANTS)
+QualityChecker("Lossless Audio Checker.log",CONFIG_CONSTANTS)
