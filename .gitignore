@@ -1,6 +1,6 @@
 *.log
-*csv
-*xlsx
+*.csv
+*.xlsx
 tools/__pycache__
 logs_test/
 .python-version
