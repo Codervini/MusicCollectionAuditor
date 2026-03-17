@@ -8,3 +8,6 @@ logs_test/
 .env
 .vscode/
 data
+*.mmd
+*.png
+*.svg
