@@ -8,16 +8,41 @@ import logging
 import csv
 from mutagen.flac import FLAC
 from pprint import pprint
-
+import musicbrainzngs as mb
+from musicbrainzngs.musicbrainz import ResponseError
+from urllib.error import HTTPError, URLError
+import json
 class MetaProcessor():
     def __init__(self):
         self.CONFIG_CONSTANTS = dotenv_values(".env")
-        self.flac_path = {"root": "", "flac_paths":[]}
+        self.manual_review_queue = []
+        # self.flac_path = {"root": "", "flac_paths":[]}
+        mb.set_useragent(app=self.CONFIG_CONSTANTS["APP_NAME"], version=self.CONFIG_CONSTANTS["VERSION"], contact=self.CONFIG_CONSTANTS["CONTACT_EMAIL"])
+        mb.set_rate_limit(1.0,1)
+
+    def _fetch(self,mb_fetch_func,*args):
+        try:
+            pprint(mb_fetch_func(*args))
+        except ResponseError as e:
+            print("MusicBrainz API error:", e)
+            return False
+            #Has artist?
+        except HTTPError as e:
+            print("HTTP error:", e)
+            return False
+        except URLError as e:
+            print("Network error:", e)
+            return False
+        except Exception as e:
+            print("Unexpected error:", e)
+            return False
+        else:
+            return True
+
 
     def _resolve_path(self,path: list):
         '''Returns the absoute path in the current system as a string.'''
         return str(Path(*path).absolute().resolve())
-
 
     def run_picard(self, dirs: list[str]):
         '''Launches MusicBrainz Picard with the provided directories.
@@ -90,7 +115,7 @@ class MetaProcessor():
             logging.critical("Picard not found. If installed, provide path in env.")
             return None
 
-    def path_finder(self, csv_file: str = None, csv_columns : list = None, root_dir : str = None, file = None):
+    def path_finder(self, csv_file: str = None, csv_columns : list = None, root_dir : str = None, file : str = None):
         """
         Finds all FLAC file paths and determines their common root directory.
 
@@ -153,7 +178,7 @@ class MetaProcessor():
             return all_flac_path_info
 
     def read_metadata(self, dirs: list[str]):
-        #List of song metadata dict's [{FilePath: "", Vorbis:{}, Technical:{}, Picture:[{}]}]
+        # List of song metadata dict's  [{"FilePath":{"Vorbis":{}, "Technical":{}, "Picture":[{}]}}]
         """
             Read metadata from a list of FLAC audio files.
 
@@ -189,11 +214,11 @@ class MetaProcessor():
         """
         all_audio_metatdata  = []
         for file in dirs:
-            audio = {"FilePath": file,"Vorbis":{}, "Streaminfo": {}, "Pictures": []} #Dict of all metadata of a song:  {Vorbis{}, Technical{}, Picture[{}]}
+            audio = {file: {"Vorbis":{}, "Streaminfo": {}, "Pictures": []}} #Dict of all metadata of a song:  {Vorbis{}, Technical{}, Picture[{}]}
             song = FLAC(file)
-            audio["Vorbis"] = song.tags.as_dict() if song.tags else {}
-            audio["Streaminfo"] = vars(song.info)
-            audio["Pictures"] = [
+            audio[file]["Vorbis"] = song.tags.as_dict() if song.tags else {}
+            audio[file]["Streaminfo"] = vars(song.info)
+            audio[file]["Pictures"] = [
                                     {
                                         "type": pic.type,
                                         "mime": pic.mime,
@@ -209,8 +234,13 @@ class MetaProcessor():
             all_audio_metatdata.append(audio)
         return all_audio_metatdata
 
+    def fetch_info_by_track_id(self,track_id : str):
+        return self._fetch(mb.get_recording_by_id,track_id)
 
-    def metaFixer(self):
+    def fetch_info_by_album_id(self,release_id : str):
+        return self._fetch(mb.get_release_by_id,release_id)
+    
+    def metaFixer_redundant(self):
 
         while True:
 
@@ -248,9 +278,35 @@ class MetaProcessor():
                 case 3:
                     pass
 
+    def metaFixer(self, song_metadata: dict):
+                                                                                                                                    # {'FilePath': "",          'Pictures': [{}],         'Streaminfo': {},        'Vorbis': {"key": ['value']}}
+        #      {"FilePath":{"Vorbis":{}, "Technical":{}, "Picture":[{}]}}
+        file = list(song_metadata.keys())[0]
+        song_metadata = song_metadata[file]
+        # print(song_metadata)
+                       
+        musicbrainz_ids_lookup = ( 'musicbrainz_albumartistid',
+                            'musicbrainz_albumid',
+                            'musicbrainz_artistid',
+                            'musicbrainz_releasegroupid',
+                            'musicbrainz_releasetrackid',
+                            'musicbrainz_trackid'
+                        )
+        musicbrainz_ids = { id_name : value[0] for id_name, value in song_metadata["Vorbis"].items() if id_name in musicbrainz_ids_lookup and value}
+                            
+        if 'musicbrainz_trackid'in musicbrainz_ids:
+            self.fetch_info_by_track_id(musicbrainz_ids.get("musicbrainz_trackid"))
+        if 'musicbrainz_albumid'in musicbrainz_ids:
+            self.fetch_info_by_album_id(musicbrainz_ids.get("musicbrainz_albumid"))
 
 
-paths = MetaProcessor().path_finder(csv_file="data/output/All Songs list.csv", csv_columns=[0,1])
+        
+
+mp = MetaProcessor()
+all_paths_info = mp.path_finder(csv_file="data/output/All Songs list.csv", csv_columns=[0,1])
+metadata_info = mp.read_metadata(all_paths_info["flac_paths"])[10]
 # pprint(paths)
 # print(MetaProcessor().read_metadata(paths)[2]["FilePath"])
-pprint(MetaProcessor().read_metadata(paths["flac_paths"])[2],sort_dicts=False, indent=5, width=120)
+# pprint(metadata_info,width=200, sort_dicts=False, compact=False)
+# print(json.dumps(metadata_info, indent=4))
+mp.metaFixer(metadata_info)
