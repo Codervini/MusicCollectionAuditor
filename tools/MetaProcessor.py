@@ -12,6 +12,7 @@ import musicbrainzngs as mb
 from musicbrainzngs.musicbrainz import ResponseError
 from urllib.error import HTTPError, URLError
 import json
+from db_handler import Song
 class MetaProcessor():
     def __init__(self):
         self.CONFIG_CONSTANTS = dotenv_values(".env")
@@ -38,6 +39,9 @@ class MetaProcessor():
             return False
         else:
             return True
+        
+    def _db_file_ingestion_handler(self):
+        pass
 
 
     def _resolve_path(self,path: list):
@@ -279,32 +283,44 @@ class MetaProcessor():
                     pass
 
     def metaFixer(self, song_metadata: dict):
-                                                                                                                                    # {'FilePath': "",          'Pictures': [{}],         'Streaminfo': {},        'Vorbis': {"key": ['value']}}
-        #      {"FilePath":{"Vorbis":{}, "Technical":{}, "Picture":[{}]}}
-        file = list(song_metadata.keys())[0]
-        song_metadata = song_metadata[file]
-        # print(song_metadata)
-                       
-        musicbrainz_ids_lookup = ( 'musicbrainz_albumartistid',
+        musicbrainz_ids_lookup = ('musicbrainz_albumartistid',
                             'musicbrainz_albumid',
                             'musicbrainz_artistid',
                             'musicbrainz_releasegroupid',
                             'musicbrainz_releasetrackid',
-                            'musicbrainz_trackid'
-                        )
-        musicbrainz_ids = { id_name : value[0] for id_name, value in song_metadata["Vorbis"].items() if id_name in musicbrainz_ids_lookup and value}
-                            
-        if 'musicbrainz_trackid'in musicbrainz_ids:
-            self.fetch_info_by_track_id(musicbrainz_ids.get("musicbrainz_trackid"))
-        if 'musicbrainz_albumid'in musicbrainz_ids:
-            self.fetch_info_by_album_id(musicbrainz_ids.get("musicbrainz_albumid"))
+                            'musicbrainz_trackid')
+                                                                                                                                    # {'FilePath': "",          'Pictures': [{}],         'Streaminfo': {},        'Vorbis': {"key": ['value']}}
+        # print(json.dumps(song_metadata, indent=4))  # {"FilePath":{"Vorbis":{}, "Technical":{}, "Picture":[{}] }} 
+
+        #------------READ FILE
+        file = list(song_metadata.keys())[0]
+        song_metadata = song_metadata[file]
+        song_musicbrainz_ids = { id_name : value[0] for id_name, value in song_metadata["Vorbis"].items() if id_name in musicbrainz_ids_lookup and value}
+        song_vorbis = {k : ", ".join(v) for k,v in song_metadata["Vorbis"].items() if k not in musicbrainz_ids_lookup and v}
+        # pprint(song_vorbis)
+
+        #---------Has MBID? 
+        track_mbid_valid = None
+        album_mbid_valid = None
+        if 'musicbrainz_trackid'in song_musicbrainz_ids:
+            track_mbid_valid = self.fetch_info_by_track_id(song_musicbrainz_ids.get("musicbrainz_trackid"))
+        if 'musicbrainz_albumid'in song_musicbrainz_ids:
+            album_mbid_valid=self.fetch_info_by_album_id(song_musicbrainz_ids.get("musicbrainz_albumid"))
+
+        song = Song(file,
+            source_title = song_vorbis.get("title", None),
+            source_artist= song_vorbis.get("artist", None),
+            source_album_mbid= song_musicbrainz_ids.get("musicbrainz_albumid",None),
+            source_track_mbid= song_musicbrainz_ids.get("musicbrainz_trackid", None),
+            track_mbid_valid = track_mbid_valid,
+            album_mbid_valid= album_mbid_valid)
 
 
         
 
 mp = MetaProcessor()
 all_paths_info = mp.path_finder(csv_file="data/output/All Songs list.csv", csv_columns=[0,1])
-metadata_info = mp.read_metadata(all_paths_info["flac_paths"])[10]
+metadata_info = mp.read_metadata(all_paths_info["flac_paths"])[70]
 # pprint(paths)
 # print(MetaProcessor().read_metadata(paths)[2]["FilePath"])
 # pprint(metadata_info,width=200, sort_dicts=False, compact=False)
