@@ -4,23 +4,19 @@ from sqlalchemy import (
     String, TIMESTAMP, ARRAY, Index, text, create_engine, Enum
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker, base
 from sqlalchemy.sql import func
 import enum  # Python's built-in enum — used to define the values
+import hashlib
 
+#----- Constants -----------------------------------------------------------------
 CONFIG_CONSTANTS = dotenv.dotenv_values(".env")
+DB_ENGINE = create_engine(f"postgresql+psycopg://{CONFIG_CONSTANTS['DB_USERNAME']}:{CONFIG_CONSTANTS['DB_PASSWORD']}@localhost/mcamusicdb")
+SESSION_MANAGER = sessionmaker(bind=DB_ENGINE)
+Base = declarative_base()
+# class Base(base):
+#     pass
 
-db_engine = create_engine(
-    f"postgresql+psycopg://{CONFIG_CONSTANTS['DB_USERNAME']}:"
-    f"{CONFIG_CONSTANTS['DB_PASSWORD']}@localhost/mcamusicdb"
-)
-
-BASE = declarative_base()
-
-
-# ── ENUMs ────────────────────────────────────────────────────────────────────
-# These are Python enums that SQLAlchemy mirrors as Postgres ENUMs in the DB.
-# The DB will REJECT any value not in this list — no more typo bugs.
 
 class ProcessorStatus(enum.Enum):
     pending    = "pending"
@@ -28,6 +24,7 @@ class ProcessorStatus(enum.Enum):
     completed  = "completed"
     failed     = "failed"
     skipped    = "skipped"
+    duplicate  = "duplicate"
 
 class AcoustidResult(enum.Enum):
     found     = "found"
@@ -45,9 +42,8 @@ class SaveType(enum.Enum):
 
 # ── Table ─────────────────────────────────────────────────────────────────────
 
-class Meta_Processor_Table(BASE):
+class Meta_Processor_Table(Base):
     __tablename__ = "meta_processor"
-
     _EMPTY_PAYLOADS = text("""
         '{
             "itunes":   {},
@@ -71,19 +67,15 @@ class Meta_Processor_Table(BASE):
     file_hash  = Column(String(64))                         # SHA-256
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
-    # NOTE: updated_at does NOT auto-update via onupdate= in Postgres.
-    # The trigger below (after_create) handles this reliably instead.
 
     # ── Pipeline state ───────────────────────────────────────────────
-    # ENUM: DB will reject anything not in ProcessorStatus
     status = Column(
         Enum(ProcessorStatus, name="processor_status"),
         nullable=False,
         server_default="pending"
     )
     current_stage = Column(String(64))                      # active node name
-    # ENUM: DB will reject anything not in SaveType
-    save_type = Column(
+    save_type = Column(                                     # ENUM: DB will reject anything not in SaveType
         Enum(SaveType, name="save_type"),
         nullable=True
     )
@@ -91,18 +83,20 @@ class Meta_Processor_Table(BASE):
     retry_count   = Column(SmallInteger, server_default=text("0"))
 
     # ── Source tags (READ_FILE) ──────────────────────────────────────
-    source_mbid  = Column(String(36))
+    source_track_mbid  = Column(String(36))
+    source_album_mbid = Column(String(36))
     source_artist = Column(Text)
     source_title  = Column(Text)
-    has_mbid  = Column(Boolean, server_default=text("false"))
-    has_tags  = Column(Boolean, server_default=text("false"))
-    mbid_valid = Column(Boolean)                            # NULL = unchecked
+    has_track_mbid  = Column(Boolean, server_default=text("false"))
+    has_album_mbid  = Column(Boolean, server_default=text("false"))
+    has_artist_and_title_tags  = Column(Boolean, server_default=text("false"))
+    track_mbid_valid = Column(Boolean)          # NULL = unchecked
+    album_mbid_valid = Column(Boolean)
 
     # ── Fingerprint (AcoustID) ───────────────────────────────────────
     acoustid_fingerprint = Column(Text)
     acoustid_score       = Column(Numeric(4, 3))            # 0.000–1.000
-    # ENUM: only 'found' or 'not_found' allowed
-    acoustid_result = Column(
+    acoustid_result = Column(                               # ENUM: only 'found' or 'not_found' allowed
         Enum(AcoustidResult, name="acoustid_result"),
         nullable=True
     )
@@ -119,8 +113,6 @@ class Meta_Processor_Table(BASE):
     resolution_source     = Column(String(32))              # which service won
 
     # ── Search results per service (MERGE_ENRICH) ────────────────────
-    # ENUM: fully_found | partially_found | not_found
-    # Each service gets the same ENUM type — they share one Postgres ENUM
     mb_search_result = Column(Enum(ServiceResult, name="service_result"), nullable=True)
     itunes_result    = Column(Enum(ServiceResult, name="service_result"), nullable=True)
     lastfm_result    = Column(Enum(ServiceResult, name="service_result"), nullable=True)
@@ -156,7 +148,7 @@ class Meta_Processor_Table(BASE):
     __table_args__ = (
 
         # Normal indexes — search across ALL rows
-        Index("ix_meta_processor_source_mbid",   "source_mbid"),
+        Index("ix_meta_processor_source_track_mbid",   "source_track_mbid"),
         Index("ix_meta_processor_resolved_mbid",  "resolved_mbid"),
         Index("ix_meta_processor_file_hash",      "file_hash"),
 
@@ -178,9 +170,86 @@ class Meta_Processor_Table(BASE):
             postgresql_where=text("needs_manual_review = true")
         ),
     )
+Base.metadata.create_all(DB_ENGINE)
 
-# ── Create everything ─────────────────────────────────────────────────────────
-BASE.metadata.create_all(db_engine)
+
+#------------Tools-----------------------------------------------------------------------------
+
+def db_init():
+    Base.metadata.create_all(DB_ENGINE)
+
+
+class Song:
+    def __init__(self, song_path:str, source_artist:str=None, source_title:str=None,
+                source_track_mbid:str = None, track_mbid_valid:bool = None,
+                source_album_mbid:str=None, album_mbid_valid:bool = None):
+        
+        with open(song_path,"rb") as f:
+            file_hash  = hashlib.sha256(f.read()).hexdigest()
+          
+        with SESSION_MANAGER() as session:
+            record = Meta_Processor_Table(
+                file_path  = song_path,
+                file_hash = file_hash,
+                status  = ProcessorStatus.pending,
+                current_stage = "READ_FILE",
+
+                source_track_mbid   = source_track_mbid,
+                source_album_mbid = source_album_mbid,
+                source_artist = source_artist,
+                source_title  = source_title,
+
+                has_track_mbid  = bool(source_track_mbid),
+                has_album_mbid   = bool(source_album_mbid),
+                has_artist_and_title_tags = bool(source_artist and source_title),
+                track_mbid_valid  = track_mbid_valid,
+                album_mbid_valid  = album_mbid_valid
+            )
+            session.add(record)
+            session.commit() 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # ── updated_at trigger ────────────────────────────────────────────────────────
