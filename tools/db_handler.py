@@ -2,7 +2,7 @@ import dotenv
 from sqlalchemy import (
     Column, Text, Boolean, SmallInteger, Numeric,
     String, TIMESTAMP, ARRAY, Index, text, create_engine, Enum,
-    UniqueConstraint, ForeignKey
+    UniqueConstraint, ForeignKey, select , event
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import declarative_base, sessionmaker, base
@@ -14,6 +14,7 @@ from machine_identifier import  machine_id
 CONFIG_CONSTANTS = dotenv.dotenv_values(".env")
 DB_ENGINE = create_engine(f"postgresql+psycopg://{CONFIG_CONSTANTS['DB_USERNAME']}:{CONFIG_CONSTANTS['DB_PASSWORD']}@localhost/mcamusicdb")
 SESSION_MANAGER = sessionmaker(bind=DB_ENGINE)
+MACHINE_ID = machine_id()
 Base = declarative_base()
 # class Base(base):
 #     pass
@@ -203,6 +204,157 @@ class Meta_Processor_Table(Base):
             postgresql_where=text("needs_manual_review = true")
         ),
     )
+
+
+# ── 1. updated_at trigger ─────────────────────────────────────────────────────
+# Fires on EVERY update regardless of whether it came from ORM or raw SQL
+
+def _create_updated_at_trigger(target, connection, **kw):
+    connection.execute(text("""
+        CREATE OR REPLACE FUNCTION touch_updated_at()
+        RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+            NEW.updated_at = now();
+            RETURN NEW;
+        END;
+        $$;
+    """))
+    connection.execute(text("""
+        DROP TRIGGER IF EXISTS trg_meta_processor_updated_at
+        ON meta_processor;
+    """))
+    connection.execute(text("""
+        CREATE TRIGGER trg_meta_processor_updated_at
+        BEFORE UPDATE ON meta_processor
+        FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+    """))
+
+#event.listen(Meta_Processor_Table.__table__, "after_create", _create_updated_at_trigger)
+
+
+# ── 2. last_scanned_at trigger ────────────────────────────────────────────────
+# Automatically sets last_scanned_at = now() on every update
+# So you never forget to update it manually in your scan logic
+
+# def _create_last_scanned_at_trigger(target, connection, **kw):
+#     connection.execute(text("""
+#         CREATE OR REPLACE FUNCTION touch_last_scanned_at()
+#         RETURNS trigger LANGUAGE plpgsql AS $$
+#         BEGIN
+#             NEW.last_scanned_at = now();
+#             RETURN NEW;
+#         END;
+#         $$;
+#     """))
+#     connection.execute(text("""
+#         DROP TRIGGER IF EXISTS trg_meta_processor_last_scanned_at
+#         ON meta_processor;
+#     """))
+#     connection.execute(text("""
+#         CREATE TRIGGER trg_meta_processor_last_scanned_at
+#         BEFORE UPDATE ON meta_processor
+#         FOR EACH ROW EXECUTE FUNCTION touch_last_scanned_at();
+#     """))
+
+#event.listen(Meta_Processor_Table.__table__, "after_create", _create_last_scanned_at_trigger)
+
+
+# ── 3. hash_changed_by auto-clear trigger ─────────────────────────────────────
+# When file_hash changes AND hash_changed_by is NULL,
+# it means something external changed the file — auto set hash_changed_by = 'external'
+# When your software changes the hash, it sets hash_changed_by = 'software' explicitly
+# After reprocessing completes, reset hash_changed_by back to NULL automatically
+
+def _create_hash_changed_by_trigger(target, connection, **kw):
+    connection.execute(text("""
+        CREATE OR REPLACE FUNCTION manage_hash_changed_by()
+        RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+            -- hash changed but nobody claimed it → must be external
+            IF NEW.file_hash <> OLD.file_hash AND NEW.hash_changed_by IS NULL THEN
+                NEW.hash_changed_by = 'external';
+                NEW.last_known_hash = OLD.file_hash;
+            END IF;
+
+            -- processing completed → clear the flag, it's been handled
+            IF NEW.status = 'completed' THEN
+                NEW.hash_changed_by = NULL;
+            END IF;
+
+            RETURN NEW;
+        END;
+        $$;
+    """))
+    connection.execute(text("""
+        DROP TRIGGER IF EXISTS trg_meta_processor_hash_changed_by
+        ON meta_processor;
+    """))
+    connection.execute(text("""
+        CREATE TRIGGER trg_meta_processor_hash_changed_by
+        BEFORE UPDATE ON meta_processor
+        FOR EACH ROW EXECUTE FUNCTION manage_hash_changed_by();
+    """))
+
+#event.listen(Meta_Processor_Table.__table__, "after_create", _create_hash_changed_by_trigger)
+
+
+# ── 4. last_failed_at trigger ─────────────────────────────────────────────────
+# Automatically stamps last_failed_at whenever status transitions to 'failed'
+# No need to set it manually in your error handling code
+
+def _create_last_failed_at_trigger(target, connection, **kw):
+    connection.execute(text("""
+        CREATE OR REPLACE FUNCTION touch_last_failed_at()
+        RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+            IF NEW.status = 'failed' AND OLD.status <> 'failed' THEN
+                NEW.last_failed_at = now();
+            END IF;
+            RETURN NEW;
+        END;
+        $$;
+    """))
+    connection.execute(text("""
+        DROP TRIGGER IF EXISTS trg_meta_processor_last_failed_at
+        ON meta_processor;
+    """))
+    connection.execute(text("""
+        CREATE TRIGGER trg_meta_processor_last_failed_at
+        BEFORE UPDATE ON meta_processor
+        FOR EACH ROW EXECUTE FUNCTION touch_last_failed_at();
+    """))
+
+event.listen(Meta_Processor_Table.__table__, "after_create", _create_last_failed_at_trigger)
+
+
+# ── 5. retry_count trigger ────────────────────────────────────────────────────
+# Automatically increments retry_count every time status goes back to 'pending'
+# from 'failed' — so you never manually track retries in your code
+
+def _create_retry_count_trigger(target, connection, **kw):
+    connection.execute(text("""
+        CREATE OR REPLACE FUNCTION increment_retry_count()
+        RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+            IF NEW.status = 'pending' AND OLD.status = 'failed' THEN
+                NEW.retry_count = OLD.retry_count + 1;
+            END IF;
+            RETURN NEW;
+        END;
+        $$;
+    """))
+    connection.execute(text("""
+        DROP TRIGGER IF EXISTS trg_meta_processor_retry_count
+        ON meta_processor;
+    """))
+    connection.execute(text("""
+        CREATE TRIGGER trg_meta_processor_retry_count
+        BEFORE UPDATE ON meta_processor
+        FOR EACH ROW EXECUTE FUNCTION increment_retry_count();
+    """))
+
+#event.listen(Meta_Processor_Table.__table__, "after_create", _create_retry_count_trigger)
+
 Base.metadata.create_all(DB_ENGINE)
 
 
@@ -210,118 +362,86 @@ Base.metadata.create_all(DB_ENGINE)
 
 def db_init():
     Base.metadata.create_all(DB_ENGINE)
+def drop_all_table_cascade():
+    Base.metadata.drop_all(DB_ENGINE)
 
 
 class Song:
     def __init__(self, song_path:str, source_artist:str=None, source_title:str=None,
                 source_track_mbid:str = None, track_mbid_valid:bool = None,
                 source_album_mbid:str=None, album_mbid_valid:bool = None):
+
+        self.set_column_data(func.now(),Meta_Processor_Table.last_scanned_at,MACHINE_ID,song_path)
         
-        if not machine_id():
+        if not MACHINE_ID:
             print("Something is wrong with machine ID, aborting!!")
-            return None
-        
-        with open(song_path,"rb") as f:
-            file_hash  = hashlib.sha256(f.read()).hexdigest()
-          
+        else:  
+            with open(song_path,"rb") as f:
+                file_hash  = hashlib.sha256(f.read()).hexdigest()
+                #Compare hash function
+                table_file_hash = self.fetch_column_data(Meta_Processor_Table.file_hash,MACHINE_ID,song_path)
+                if table_file_hash != file_hash and table_file_hash != False:
+                    self.set_column_data(HashChangedBy.external,Meta_Processor_Table.hash_changed_by,MACHINE_ID,song_path)
+                    self.set_column_data(table_file_hash,Meta_Processor_Table.last_known_hash,MACHINE_ID,song_path)
+                    self.set_column_data(file_hash,Meta_Processor_Table.file_hash,MACHINE_ID,song_path)
+
+            table_file_path = self.fetch_column_data(Meta_Processor_Table.file_path,MACHINE_ID,song_path)
+            table_machine_id = self.fetch_column_data(Meta_Processor_Table.machine_id,MACHINE_ID,song_path)
+            if table_file_hash and table_machine_id:
+                print("Row already present")
+            else:
+                with SESSION_MANAGER() as session:
+                    record = Meta_Processor_Table(
+
+                        #Process info
+                        machine_id = MACHINE_ID,
+                        file_path  = song_path,
+                        file_hash = file_hash,
+                        status  = ProcessorStatus.pending,
+                        current_stage = PipelineStage.read_file,
+
+                        #Source file info
+                        source_track_mbid   = source_track_mbid,
+                        source_album_mbid = source_album_mbid,
+                        source_artist = source_artist,
+                        source_title  = source_title,
+
+                        #Source Validation
+                        has_track_mbid  = bool(source_track_mbid),
+                        has_album_mbid   = bool(source_album_mbid),
+                        has_artist_and_title_tags = bool(source_artist and source_title),
+                        track_mbid_valid  = track_mbid_valid,
+                        album_mbid_valid  = album_mbid_valid
+                    )
+                    session.add(record)
+                    session.commit()
+
+    def truncate_table():
+        pass
+
+
+    def fetch_column_data(self,column, machine_id, file_path):
         with SESSION_MANAGER() as session:
-            record = Meta_Processor_Table(
-
-                #Process info
-                machine_id = machine_id(),
-                file_path  = song_path,
-                file_hash = file_hash,
-                status  = ProcessorStatus.pending,
-                current_stage = PipelineStage.read_file,
-
-                #Source file info
-                source_track_mbid   = source_track_mbid,
-                source_album_mbid = source_album_mbid,
-                source_artist = source_artist,
-                source_title  = source_title,
-
-                #Source Validation
-                has_track_mbid  = bool(source_track_mbid),
-                has_album_mbid   = bool(source_album_mbid),
-                has_artist_and_title_tags = bool(source_artist and source_title),
-                track_mbid_valid  = track_mbid_valid,
-                album_mbid_valid  = album_mbid_valid
+            command = select(column).where(
+                Meta_Processor_Table.machine_id == machine_id,
+                Meta_Processor_Table.file_path == file_path
             )
-            session.add(record)
-            session.commit() 
+            return session.execute(command).scalar_one_or_none()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ── updated_at trigger ────────────────────────────────────────────────────────
-# onupdate=func.now() in SQLAlchemy does NOT create a DB trigger.
-# It only works when you update via SQLAlchemy ORM — raw SQL updates ignore it.
-# This trigger fires on EVERY update, no matter how the row is changed.
-
-# from sqlalchemy import event
-
-# def _create_updated_at_trigger(target, connection, **kw):
-#     connection.execute(text("""
-#         CREATE OR REPLACE FUNCTION touch_updated_at()
-#         RETURNS trigger LANGUAGE plpgsql AS $$
-#         BEGIN
-#             NEW.updated_at = now();
-#             RETURN NEW;
-#         END;
-#         $$;
-#     """))
-#     connection.execute(text("""
-#         DROP TRIGGER IF EXISTS trg_meta_processor_updated_at
-#         ON meta_processor;
-#     """))
-#     connection.execute(text("""
-#         CREATE TRIGGER trg_meta_processor_updated_at
-#         BEFORE UPDATE ON meta_processor
-#         FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
-#     """))
-
-# # Runs once, right after create_all() creates the table
-# event.listen(Meta_Processor_Table.__table__, "after_create", _create_updated_at_trigger)
+    def set_column_data(self,value,column, machine_id, file_path):
+        with SESSION_MANAGER() as session:
+            select_command = select(Meta_Processor_Table).where(
+                Meta_Processor_Table.machine_id == machine_id,
+                Meta_Processor_Table.file_path  == file_path
+            )
+            row = session.execute(select_command).scalar_one_or_none()
+            if row:
+                print(row)
+                setattr(row, column.key, value)     # row.column = value
+                if column.key != "last_scanned_at":
+                    row.updated_at = func.now()            
+            else:
+                print("No row found", row)
+            session.commit()
 
 
