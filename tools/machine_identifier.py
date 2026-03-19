@@ -7,7 +7,7 @@ import platform
 import datetime
 
 def generate_new_machine_id(path, full_json:dict, id_type:str="system_defined"):
-    '''type = user_defined or system_defined'''
+    '''type = user_defined or system_defined, generates new machine id data and returns newly generated id'''
     machine_id_json = full_json["machine_id"]
     machine_id = machineid.id()
 
@@ -53,7 +53,7 @@ def generate_new_machine_id(path, full_json:dict, id_type:str="system_defined"):
     with open(path,"w") as f:
         json.dump(full_json,f)
 
-    return 
+    return machine_id
 
     
 
