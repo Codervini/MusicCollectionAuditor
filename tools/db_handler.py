@@ -87,7 +87,7 @@ class Meta_Processor_Table(Base):
     is_duplicate_of   = Column(UUID(as_uuid=True), ForeignKey("meta_processor.id"), nullable=True)
     created_at        = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at        = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
-    last_scanned_at   = Column(TIMESTAMP(timezone=True))            # updated every scan
+    last_scanned_at   = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())            # updated every scan
 
     # ── Pipeline state ───────────────────────────────────────────────
     status = Column(
@@ -265,35 +265,35 @@ def _create_updated_at_trigger(target, connection, **kw):
 # When your software changes the hash, it sets hash_changed_by = 'software' explicitly
 # After reprocessing completes, reset hash_changed_by back to NULL automatically
 
-def _create_hash_changed_by_trigger(target, connection, **kw):
-    connection.execute(text("""
-        CREATE OR REPLACE FUNCTION manage_hash_changed_by()
-        RETURNS trigger LANGUAGE plpgsql AS $$
-        BEGIN
-            -- hash changed but nobody claimed it → must be external
-            IF NEW.file_hash <> OLD.file_hash AND NEW.hash_changed_by IS NULL THEN
-                NEW.hash_changed_by = 'external';
-                NEW.last_known_hash = OLD.file_hash;
-            END IF;
+# def _create_hash_changed_by_trigger(target, connection, **kw):
+#     connection.execute(text("""
+#         CREATE OR REPLACE FUNCTION manage_hash_changed_by()
+#         RETURNS trigger LANGUAGE plpgsql AS $$
+#         BEGIN
+#             -- hash changed but nobody claimed it → must be external
+#             IF NEW.file_hash <> OLD.file_hash AND NEW.hash_changed_by IS NULL THEN
+#                 NEW.hash_changed_by = 'external';
+#                 NEW.last_known_hash = OLD.file_hash;
+#             END IF;
 
-            -- processing completed → clear the flag, it's been handled
-            IF NEW.status = 'completed' THEN
-                NEW.hash_changed_by = NULL;
-            END IF;
+#             -- processing completed → clear the flag, it's been handled
+#             IF NEW.status = 'completed' THEN
+#                 NEW.hash_changed_by = NULL;
+#             END IF;
 
-            RETURN NEW;
-        END;
-        $$;
-    """))
-    connection.execute(text("""
-        DROP TRIGGER IF EXISTS trg_meta_processor_hash_changed_by
-        ON meta_processor;
-    """))
-    connection.execute(text("""
-        CREATE TRIGGER trg_meta_processor_hash_changed_by
-        BEFORE UPDATE ON meta_processor
-        FOR EACH ROW EXECUTE FUNCTION manage_hash_changed_by();
-    """))
+#             RETURN NEW;
+#         END;
+#         $$;
+#     """))
+#     connection.execute(text("""
+#         DROP TRIGGER IF EXISTS trg_meta_processor_hash_changed_by
+#         ON meta_processor;
+#     """))
+#     connection.execute(text("""
+#         CREATE TRIGGER trg_meta_processor_hash_changed_by
+#         BEFORE UPDATE ON meta_processor
+#         FOR EACH ROW EXECUTE FUNCTION manage_hash_changed_by();
+#     """))
 
 #event.listen(Meta_Processor_Table.__table__, "after_create", _create_hash_changed_by_trigger)
 
@@ -367,36 +367,36 @@ def drop_all_table_cascade():
 
 
 class Song:
-    def __init__(self, song_path:str, source_artist:str=None, source_title:str=None,
-                source_track_mbid:str = None, track_mbid_valid:bool = None,
-                source_album_mbid:str=None, album_mbid_valid:bool = None):
+    def __init__(self,  
+                file_path:str, 
+                source_artist:str = None, source_title:str = None,
+                source_track_mbid:str = None, source_album_mbid:str = None,
+                track_mbid_valid:bool = None, album_mbid_valid:bool = None):
 
-        self.set_column_data(func.now(),Meta_Processor_Table.last_scanned_at,MACHINE_ID,song_path)
-        
         if not MACHINE_ID:
             print("Something is wrong with machine ID, aborting!!")
-        else:  
-            with open(song_path,"rb") as f:
-                file_hash  = hashlib.sha256(f.read()).hexdigest()
-                #Compare hash function
-                table_file_hash = self.fetch_column_data(Meta_Processor_Table.file_hash,MACHINE_ID,song_path)
-                if table_file_hash != file_hash and table_file_hash != False:
-                    self.set_column_data(HashChangedBy.external,Meta_Processor_Table.hash_changed_by,MACHINE_ID,song_path)
-                    self.set_column_data(table_file_hash,Meta_Processor_Table.last_known_hash,MACHINE_ID,song_path)
-                    self.set_column_data(file_hash,Meta_Processor_Table.file_hash,MACHINE_ID,song_path)
+        elif MACHINE_ID:  
+            # Keys to uniquely find a file in db
+            self.MACHINE_ID = MACHINE_ID
+            self.file_path =  file_path
 
-            table_file_path = self.fetch_column_data(Meta_Processor_Table.file_path,MACHINE_ID,song_path)
-            table_machine_id = self.fetch_column_data(Meta_Processor_Table.machine_id,MACHINE_ID,song_path)
+
+            table_file_hash = self.fetch_file_hash_in_db()
+            # table_file_path = self.fetch_column_data(Meta_Processor_Table.file_path)
+            table_machine_id = self.fetch_column_data(Meta_Processor_Table.machine_id)
+
             if table_file_hash and table_machine_id:
                 print("Row already present")
+                self.update_last_scanned_at()
+                self.check_and_validate_if_hash_in_db_changed_externally()
             else:
                 with SESSION_MANAGER() as session:
                     record = Meta_Processor_Table(
 
                         #Process info
-                        machine_id = MACHINE_ID,
-                        file_path  = song_path,
-                        file_hash = file_hash,
+                        machine_id = self.MACHINE_ID,
+                        file_path  = self.file_path,
+                        file_hash = self.calculate_file_hash(),
                         status  = ProcessorStatus.pending,
                         current_stage = PipelineStage.read_file,
 
@@ -416,32 +416,70 @@ class Song:
                     session.add(record)
                     session.commit()
 
-    def truncate_table():
-        pass
-
-
-    def fetch_column_data(self,column, machine_id, file_path):
+    # Basic functions
+    def fetch_column_data(self, column):
+        self.update_last_scanned_at()
         with SESSION_MANAGER() as session:
             command = select(column).where(
-                Meta_Processor_Table.machine_id == machine_id,
-                Meta_Processor_Table.file_path == file_path
+                Meta_Processor_Table.machine_id == self.MACHINE_ID,
+                Meta_Processor_Table.file_path == self.file_path
             )
             return session.execute(command).scalar_one_or_none()
 
-    def set_column_data(self,value,column, machine_id, file_path):
+    def set_column_data(self, value, column):
+        # self.update_last_scanned_at()
         with SESSION_MANAGER() as session:
             select_command = select(Meta_Processor_Table).where(
-                Meta_Processor_Table.machine_id == machine_id,
-                Meta_Processor_Table.file_path  == file_path
+                Meta_Processor_Table.machine_id == self.MACHINE_ID,
+                Meta_Processor_Table.file_path  == self.file_path
             )
             row = session.execute(select_command).scalar_one_or_none()
             if row:
                 print(row)
-                setattr(row, column.key, value)     # row.column = value
-                if column.key != "last_scanned_at":
-                    row.updated_at = func.now()            
+                setattr(row, column.key, value)     # row.column = value        
+                row.last_scanned_at = func.now() 
             else:
                 print("No row found", row)
             session.commit()
+
+    
+    def update_last_scanned_at(self):
+        with SESSION_MANAGER() as session:
+            select_command = select(Meta_Processor_Table).where(
+                Meta_Processor_Table.machine_id == self.MACHINE_ID,
+                Meta_Processor_Table.file_path  == self.file_path
+            )
+            row = session.execute(select_command).scalar_one_or_none()
+            if row:
+                print(row)
+                row.last_scanned_at = func.now()
+            else:
+                print("No row found", row)
+            session.commit()
+
+
+
+    def calculate_file_hash(self):
+        with open(self.file_path,"rb") as f:
+            return hashlib.sha256(f.read()).hexdigest()
+    
+
+    def truncate_table():
+        pass
+
+    # Derived Functions
+    def check_and_validate_if_hash_in_db_changed_externally(self):
+        file_hash  = self.calculate_file_hash()
+        file_hash_in_db = self.fetch_column_data(Meta_Processor_Table.file_hash)
+        if file_hash_in_db and file_hash_in_db != file_hash: #Hash changed externally
+            self.set_column_data(HashChangedBy.external, Meta_Processor_Table.hash_changed_by)
+            self.set_column_data(file_hash_in_db, Meta_Processor_Table.last_known_hash)
+            self.set_column_data(file_hash, Meta_Processor_Table.file_hash)
+            return True
+        return False
+   
+    def fetch_file_hash_in_db(self):
+        return self.fetch_column_data(Meta_Processor_Table.file_hash)
+
 
 
