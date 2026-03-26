@@ -11,3 +11,6 @@ data
 *.mmd
 *.png
 *.svg
+*.old
+/.devlopment_board
+*.yaml
