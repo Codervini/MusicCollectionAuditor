@@ -4,7 +4,7 @@ from dotenv import dotenv_values
 import logging
 import datetime
 import re
-from tools.QualityChecker import QualityChecker
+from app_tools.QualityChecker import QualityChecker
 
 if not Path("data").exists():
     Path("data").mkdir()
