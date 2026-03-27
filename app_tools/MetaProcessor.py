@@ -12,7 +12,8 @@ import musicbrainzngs as mb
 from musicbrainzngs.musicbrainz import ResponseError
 from urllib.error import HTTPError, URLError
 import json
-from db_handler import Song
+from db_manager.tools.meta_processor_db_handler import Song, db_init , drop_all_table_cascade
+
 class MetaProcessor():
     def __init__(self):
         self.CONFIG_CONSTANTS = dotenv_values(".env")
@@ -306,6 +307,9 @@ class MetaProcessor():
             track_mbid_valid = self.fetch_info_by_track_id(song_musicbrainz_ids.get("musicbrainz_trackid"))
         if 'musicbrainz_albumid'in song_musicbrainz_ids:
             album_mbid_valid=self.fetch_info_by_album_id(song_musicbrainz_ids.get("musicbrainz_albumid"))
+
+        # drop_all_table_cascade()
+        # db_init()
 
         song = Song(file,
             source_title = song_vorbis.get("title", None),
