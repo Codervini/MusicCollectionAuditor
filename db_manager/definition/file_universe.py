@@ -1,6 +1,6 @@
 import dotenv
-from tools.machine_identifier import  machine_id
-from tools.enums import *
+from app_tools.machine_identifier import  machine_id
+from app_tools.enums import *
 from sqlalchemy import (
     Column, Text, Boolean, SmallInteger, Integer, Date,
     String, TIMESTAMP, Index, text, Enum,
@@ -9,7 +9,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import declarative_base ,sessionmaker
 from sqlalchemy.sql import func
-
+from db_manager.db_connector import Base , DB_ENGINE
 """
 music_library/schema.py
 =======================
@@ -27,11 +27,11 @@ Author: Auto-generated
 
 
 #----- Constants -----------------------------------------------------------------
-CONFIG_CONSTANTS = dotenv.dotenv_values(".env")
-DB_ENGINE = create_engine(f"postgresql+psycopg://{CONFIG_CONSTANTS['DB_USERNAME']}:{CONFIG_CONSTANTS['DB_PASSWORD']}@localhost:5432/mcamusicdb")
-SESSION_MANAGER = sessionmaker(bind=DB_ENGINE)
-MACHINE_ID = machine_id()
-Base = declarative_base()
+# CONFIG_CONSTANTS = dotenv.dotenv_values(".env")
+# DB_ENGINE = create_engine(f"postgresql+psycopg://{CONFIG_CONSTANTS['DB_USERNAME']}:{CONFIG_CONSTANTS['DB_PASSWORD']}@localhost:5432/mcamusicdb")
+# SESSION_MANAGER = sessionmaker(bind=DB_ENGINE)
+# MACHINE_ID = machine_id()
+# Base = declarative_base()
 
 
 
@@ -417,4 +417,4 @@ class Tags(Base):
 
 
 
-Base.metadata.create_all(DB_ENGINE)
+# Base.metadata.create_all(DB_ENGINE)

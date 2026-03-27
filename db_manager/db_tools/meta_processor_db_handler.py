@@ -9,7 +9,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker, base
 from sqlalchemy.sql import func
 import enum  # Python's built-in enum — used to define the values
 import hashlib
-from tools.machine_identifier import  machine_id
+from app_tools.machine_identifier import  machine_id
 #----- Constants -----------------------------------------------------------------
 CONFIG_CONSTANTS = dotenv.dotenv_values(".env")
 DB_ENGINE = create_engine(f"postgresql+psycopg://{CONFIG_CONSTANTS['DB_USERNAME']}:{CONFIG_CONSTANTS['DB_PASSWORD']}@localhost:5432/mcamusicdb")
