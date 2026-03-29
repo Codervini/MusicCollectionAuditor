@@ -4,7 +4,7 @@ from dotenv import dotenv_values
 import logging
 import datetime
 import re
-from app_tools.QualityChecker import QualityChecker
+from mca.modules.QualityChecker import QualityChecker
 
 if not Path("data").exists():
     Path("data").mkdir()
@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.DEBUG, filename=LOG_FILE,filemode="w",
 
 
 if Path(".env").exists():
-    CONFIG_CONSTANTS = dotenv_values(".env")
+    CONFIG_CONSTANTS = dotenv_values("/home/vinish/Desktop/MusicCollectionAuditor/data/config/.env")
     logging.info("Environment variables initialised")
 else:
     logging.info(".env file not found")

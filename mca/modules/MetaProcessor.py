@@ -12,11 +12,11 @@ import musicbrainzngs as mb
 from musicbrainzngs.musicbrainz import ResponseError
 from urllib.error import HTTPError, URLError
 import json
-from db_manager.tools.meta_processor_db_handler import Song, db_init , drop_all_table_cascade
+from mca.core.db_butler import Song, db_init , drop_all_table_cascade
 
 class MetaProcessor():
     def __init__(self):
-        self.CONFIG_CONSTANTS = dotenv_values(".env")
+        self.CONFIG_CONSTANTS = dotenv_values("/home/vinish/Desktop/MusicCollectionAuditor/data/config/.env")
         self.manual_review_queue = []
         # self.flac_path = {"root": "", "flac_paths":[]}
         mb.set_useragent(app=self.CONFIG_CONSTANTS["APP_NAME"], version=self.CONFIG_CONSTANTS["VERSION"], contact=self.CONFIG_CONSTANTS["CONTACT_EMAIL"])

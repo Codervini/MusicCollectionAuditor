@@ -8,7 +8,7 @@ import shutil
 import datetime
 import openpyxl
 import send2trash
-CONFIG_CONSTANTS = dotenv_values(".env")
+CONFIG_CONSTANTS = dotenv_values("/home/vinish/Desktop/MusicCollectionAuditor/data/config/.env")
 
 def csvFormatter(name):
     return str(Path("data","output",f'{name} {str(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))}.csv'))
