@@ -15,3 +15,5 @@ data
 /.devlopment_board
 *.yaml
 *__pycache__*
+config/
+*.txt
