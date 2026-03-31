@@ -46,7 +46,7 @@ class Artists(Base):
     """
     __tablename__ = "artists"
 
-    id               = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id               = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid          = Column(String(1024), nullable=False)
     name             = Column(Text, nullable=False)                         # display name e.g. "Freddie Mercury"
     sort_name        = Column(Text, nullable=True)                          # sortable e.g. "Mercury, Freddie"
@@ -80,7 +80,7 @@ class ArtistAliases(Base):
     """
     __tablename__ = "artist_aliases"
 
-    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     artist_id       = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
     alias_type_id   = Column(UUID(as_uuid=True), ForeignKey("alias_types_lookup.id"), nullable=False)
@@ -106,7 +106,7 @@ class ArtistLinks(Base):
     """
     __tablename__ = "artist_info_source"
 
-    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     artist_id       = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
     link_type_id    = Column(UUID(as_uuid=True), ForeignKey("link_types_lookup.id"), nullable=False)
@@ -135,7 +135,7 @@ class Works(Base):
     """
     __tablename__ = "works"
 
-    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     title           = Column(Text, nullable=False)                          # song name
     type_id         = Column(UUID(as_uuid=True), ForeignKey("work_type_lookup.id"), nullable=True)
@@ -164,7 +164,7 @@ class WorkCredits(Base):
     """
     __tablename__ = "work_credits"
 
-    id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid             = Column(String(1024), nullable=False)
     work_id             = Column(UUID(as_uuid=True), ForeignKey("works.id"), nullable=False)
     artist_id           = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
@@ -204,7 +204,7 @@ class Recordings(Base):
     """
     __tablename__ = "recordings"
 
-    id                   = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id                   = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid              = Column(String(1024), nullable=False)
     work_id              = Column(UUID(as_uuid=True), ForeignKey("works.id"), nullable=False)
     version_type_id      = Column(UUID(as_uuid=True), ForeignKey("version_type_lookup.id"), nullable=False)
@@ -242,7 +242,7 @@ class RecordingCredits(Base):
     """
     __tablename__ = "recording_credits"
 
-    id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid             = Column(String(1024), nullable=False)
     recording_id        = Column(UUID(as_uuid=True), ForeignKey("recordings.id"), nullable=False)
     artist_id           = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
@@ -276,7 +276,7 @@ class Releases(Base):
     """
     __tablename__ = "releases"
 
-    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     title           = Column(Text, nullable=False)
     type_id         = Column(UUID(as_uuid=True), ForeignKey("release_type_lookup.id"), nullable=True)
@@ -313,7 +313,7 @@ class ReleaseCredits(Base):
     """
     __tablename__ = "release_credits"
 
-    id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid             = Column(String(1024), nullable=False)
     release_id          = Column(UUID(as_uuid=True), ForeignKey("releases.id"), nullable=False)
     artist_id           = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
@@ -348,7 +348,7 @@ class Tracks(Base):
     """
     __tablename__ = "tracks"
 
-    id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid      = Column(String(1024), nullable=False)
     recording_id = Column(UUID(as_uuid=True), ForeignKey("recordings.id"), nullable=False)
     release_id   = Column(UUID(as_uuid=True), ForeignKey("releases.id"), nullable=False)
@@ -386,7 +386,7 @@ class PhysicalFiles(Base):
     """
     __tablename__ = "physical_files"
 
-    id                   = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id                   = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid              = Column(String(1024), nullable=False)
 
     # Core identity
@@ -454,7 +454,7 @@ class FileQualityProfile(Base):
     """
     __tablename__ = "file_quality_profile"
 
-    id               = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id               = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid          = Column(String(1024), nullable=False)
     physical_file_id = Column(UUID(as_uuid=True), ForeignKey("physical_files.id"), nullable=False, unique=True)
     quality_tier_id  = Column(UUID(as_uuid=True), ForeignKey("quality_tier_lookup.id"), nullable=True)
@@ -484,7 +484,7 @@ class Tags(Base):
     """
     __tablename__ = "tags"
 
-    id             = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id             = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid        = Column(String(1024), nullable=False)
     entity_type_id = Column(UUID(as_uuid=True), ForeignKey("entity_type_lookup.id"), nullable=False)
     entity_id      = Column(UUID(as_uuid=True), nullable=False)             # points to whichever table
