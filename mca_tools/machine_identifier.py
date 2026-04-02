@@ -92,7 +92,7 @@ def set_current_machine_id(path:Path,full_json:dict):
 
 def machine_id():
     '''Handles machine_id logic. Returns machine_id or else None if theres an error'''
-    config = Path("data","config","config.json")
+    config = Path("config","config.json")
 
     with open(config,"r") as f:
         full_json = json.load(f)
