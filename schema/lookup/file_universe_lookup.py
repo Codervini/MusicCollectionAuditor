@@ -1,15 +1,11 @@
-import dotenv
-from mca_tools.machine_identifier import machine_id
-from mca_tools.enums import *
 from sqlalchemy import (
     Column, Text, Boolean, SmallInteger, Integer, Date,
     String, TIMESTAMP, Index, text, Enum,
-    UniqueConstraint, ForeignKey, create_engine
+    UniqueConstraint, ForeignKey
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.sql import func
-from schema.base import Base, DB_ENGINE
+from schema.base import Base
 
 """
 music_library/lookup_schema.py
@@ -38,13 +34,13 @@ class ArtistTypeLookup(Base):
     """
     __tablename__ = "artist_type_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)   # FK → machines (TBD universe)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)   # FK → machines (TBD universe)
 
 
 class GenderLookup(Base):
@@ -55,13 +51,13 @@ class GenderLookup(Base):
     """
     __tablename__ = "gender_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class WorkTypeLookup(Base):
@@ -71,13 +67,13 @@ class WorkTypeLookup(Base):
     """
     __tablename__ = "work_type_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class VersionTypeLookup(Base):
@@ -88,13 +84,13 @@ class VersionTypeLookup(Base):
     """
     __tablename__ = "version_type_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class ReleaseTypeLookup(Base):
@@ -105,13 +101,13 @@ class ReleaseTypeLookup(Base):
     """
     __tablename__ = "release_type_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class FileFormatLookup(Base):
@@ -127,7 +123,7 @@ class FileFormatLookup(Base):
     """
     __tablename__ = "file_format_lookup"
 
-    id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid             = Column(String(256), nullable=False)
 
     # Identity
@@ -165,7 +161,7 @@ class FileFormatLookup(Base):
 
     created_at          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by          = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by          = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class QualityTierLookup(Base):
@@ -183,7 +179,7 @@ class QualityTierLookup(Base):
     """
     __tablename__ = "quality_tier_lookup"
 
-    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(256), nullable=False)
     name            = Column(String(64), nullable=False, unique=True)       # e.g. hi_res, lossless
     label           = Column(String(64), nullable=False)                    # e.g. "Hi-Res", "Lossless (CD)"
@@ -191,7 +187,7 @@ class QualityTierLookup(Base):
     tier_order      = Column(SmallInteger, nullable=False)                  # 1 = lowest, ascending quality
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by      = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by      = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class TagSourceLookup(Base):
@@ -201,13 +197,13 @@ class TagSourceLookup(Base):
     """
     __tablename__ = "tag_source_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class TagLookup(Base):
@@ -221,14 +217,14 @@ class TagLookup(Base):
     """
     __tablename__ = "tag_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)           # the tag e.g. "rock"
     description = Column(Text, nullable=True)
     source_id   = Column(UUID(as_uuid=True), ForeignKey("tag_source_lookup.id"), nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         Index("ix_tag_lookup_name",      "name"),
@@ -243,14 +239,14 @@ class EntityTypeLookup(Base):
     """
     __tablename__ = "entity_type_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     table_name  = Column(String(64), nullable=False)                        # actual db table name
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class AliasTypeLookup(Base):
@@ -260,13 +256,13 @@ class AliasTypeLookup(Base):
     """
     __tablename__ = "alias_types_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class LinkTypeLookup(Base):
@@ -278,14 +274,14 @@ class LinkTypeLookup(Base):
     """
     __tablename__ = "link_types_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     base_url    = Column(Text, nullable=True)                               # e.g. https://open.spotify.com/artist/
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class ArtistRolesLookup(Base):
@@ -297,13 +293,13 @@ class ArtistRolesLookup(Base):
     """
     __tablename__ = "artist_roles_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class CreditSourceLookup(Base):
@@ -314,14 +310,14 @@ class CreditSourceLookup(Base):
     """
     __tablename__ = "credit_source_lookup"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
     name        = Column(String(64), nullable=False, unique=True)
     source_url  = Column(Text, nullable=True)                               # base URL of the source platform
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by  = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
 
 class CountryLookup(Base):
@@ -336,7 +332,7 @@ class CountryLookup(Base):
     """
     __tablename__ = "country_lookup"
 
-    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     name            = Column(String(128), nullable=False, unique=True)      # full country name
     alpha2          = Column(String(2), nullable=False, unique=True)        # ISO 3166-1 alpha-2
@@ -346,7 +342,7 @@ class CountryLookup(Base):
     is_active       = Column(Boolean, nullable=False, server_default=text("true"))  # false = dissolved/historical
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by      = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by      = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         Index("ix_country_lookup_alpha2", "alpha2"),
@@ -366,7 +362,7 @@ class LocaleLookup(Base):
     """
     __tablename__ = "locale_lookup"
 
-    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     code            = Column(String(16), nullable=False, unique=True)       # full locale e.g. en_US
     language_code   = Column(String(8), nullable=False)                     # ISO 639-1 e.g. en
@@ -376,7 +372,7 @@ class LocaleLookup(Base):
     is_rtl          = Column(Boolean, nullable=False, server_default=text("false"))  # right-to-left script?
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by      = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by      = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         Index("ix_locale_lookup_code",          "code"),
@@ -394,7 +390,7 @@ class ISOLanguageLookup(Base):
     """
     __tablename__ = "iso_language_lookup"
 
-    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     name            = Column(String(128), nullable=False, unique=True)      # English name of language
     iso_639_1       = Column(String(2), nullable=True, unique=True)         # 2-letter (may be null for rare langs)
@@ -403,7 +399,7 @@ class ISOLanguageLookup(Base):
     is_active       = Column(Boolean, nullable=False, server_default=text("true"))
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by      = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by      = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         Index("ix_iso_language_lookup_iso_639_1", "iso_639_1"),

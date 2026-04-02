@@ -61,10 +61,9 @@ class Artists(Base):
     raw_mb_response  = Column(JSONB, nullable=True)                         # full MusicBrainz API response
     created_at       = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at       = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by       = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by       = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
-        Index("ix_artists_mbid",      "mbid"),
         Index("ix_artists_name",      "name"),
         Index("ix_artists_sort_name", "sort_name"),
         Index("ix_artists_type_id",   "type_id"),
@@ -90,7 +89,7 @@ class ArtistAliases(Base):
     is_primary      = Column(Boolean, nullable=False, server_default=text("false"))
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by      = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by      = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         Index("ix_artist_aliases_artist_id", "artist_id"),
@@ -113,7 +112,7 @@ class ArtistLinks(Base):
     url             = Column(Text, nullable=False)
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by      = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by      = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("artist_id", "link_type_id", name="uq_artist_links_artist_type"),
@@ -145,7 +144,7 @@ class Works(Base):
     raw_mb_response = Column(JSONB, nullable=True)
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by      = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by      = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         Index("ix_works_mbid",        "mbid"),
@@ -175,7 +174,7 @@ class WorkCredits(Base):
     note                = Column(Text, nullable=True)
     created_at          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by          = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by          = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("work_id", "artist_id", "role_id", name="uq_work_credits"),
@@ -220,11 +219,11 @@ class Recordings(Base):
     raw_mb_response      = Column(JSONB, nullable=True)
     created_at           = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at           = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by           = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by           = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         Index("ix_recordings_work_id",              "work_id"),
-        Index("ix_recordings_mbid",                 "mbid"),
+        Index("ix_recordings_mb_recording_id",      "mb_recording_id"),
         Index("ix_recordings_isrc",                 "isrc"),
         Index("ix_recordings_acoustid_fingerprint", "acoustid_fingerprint"),
         Index("ix_recordings_acoustid_mbid",        "acoustid_mbid"),
@@ -253,7 +252,7 @@ class RecordingCredits(Base):
     note                = Column(Text, nullable=True)
     created_at          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by          = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by          = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("recording_id", "artist_id", "role_id", name="uq_recording_credits"),
@@ -293,10 +292,10 @@ class Releases(Base):
     raw_mb_response = Column(JSONB, nullable=True)
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by      = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by      = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
-        Index("ix_releases_mbid",       "mbid"),
+        Index("ix_releases_mb_release_id",       "mb_release_id"),
         Index("ix_releases_title",      "title"),
         Index("ix_releases_year",       "year"),
         Index("ix_releases_type_id",    "type_id"),
@@ -324,7 +323,7 @@ class ReleaseCredits(Base):
     note                = Column(Text, nullable=True)
     created_at          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by          = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by          = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("release_id", "artist_id", "role_id", name="uq_release_credits"),
@@ -344,7 +343,7 @@ class Tracks(Base):
     """
     Links a recording to a release with a position number.
     One recording can appear on many releases — one track row each time.
-    mbid: MusicBrainz track ID (distinct from recording MBID).
+    mb_track_id: MusicBrainz track ID (distinct from recording MBID).
     """
     __tablename__ = "tracks"
 
@@ -359,14 +358,14 @@ class Tracks(Base):
     mb_track_id  = Column(String(36), nullable=True)                        # MusicBrainz track ID
     created_at   = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at   = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by   = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by   = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("recording_id", "release_id", name="uq_tracks_recording_release"),
         UniqueConstraint("release_id", "disc_number", "position", name="uq_tracks_position"),
         Index("ix_tracks_recording_id", "recording_id"),
         Index("ix_tracks_release_id",   "release_id"),
-        Index("ix_tracks_mbid",         "mbid"),
+        Index("ix_tracks_mb_track_id",         "mb_track_id"),
     )
 
 
@@ -426,7 +425,7 @@ class PhysicalFiles(Base):
 
     added_at             = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at           = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by           = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by           = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         Index("ix_physical_files_recording_id",  "recording_id"),
@@ -462,7 +461,7 @@ class FileQualityProfile(Base):
     computed_at      = Column(TIMESTAMP(timezone=True), nullable=True)      # null = not yet computed
     created_at       = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at       = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by       = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by       = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         Index("ix_file_quality_profile_physical_file_id", "physical_file_id"),
@@ -492,7 +491,7 @@ class Tags(Base):
     source_id      = Column(UUID(as_uuid=True), ForeignKey("tag_source_lookup.id"), nullable=False)
     created_at     = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at     = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    updated_by     = Column(UUID(as_uuid=True), ForeignKey("machines.id"), nullable=True)
+    updated_by     = Column(String(64), ForeignKey("machines.id"), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("entity_type_id", "entity_id", "tag_id", "source_id", name="uq_tags"),

@@ -48,7 +48,7 @@ class PipelinePhaseLookup(Base):
     __tablename__ = "pipeline_phase_lookup"
     id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid      = Column(String(1024), nullable=False)
-    stage_id     = Column(String(64), ForeignKey("pipeline_stage_lookup.id"), nullable=False)
+    stage_id     = Column(UUID(as_uuid=True), ForeignKey("pipeline_stage_lookup.id"), nullable=False)
     label        = Column(String(128), nullable=False)
     display_order = Column(SmallInteger, nullable=False)
     description  = Column(Text, nullable=True)
@@ -58,8 +58,8 @@ class PipelineStepLookup(Base):
     __tablename__ = "pipeline_step_lookup"
     id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid      = Column(String(1024), nullable=False)
-    phase_id     = Column(String(64), ForeignKey("pipeline_phase_lookup.id"), nullable=False)
-    stage_id     = Column(String(64), ForeignKey("pipeline_stage_lookup.id"), nullable=False)
+    phase_id     = Column(UUID(as_uuid=True), ForeignKey("pipeline_phase_lookup.id"), nullable=False)
+    stage_id     = Column(UUID(as_uuid=True), ForeignKey("pipeline_stage_lookup.id"), nullable=False)
     label        = Column(String(128), nullable=False)
     display_order = Column(SmallInteger, nullable=False)
     description  = Column(Text, nullable=True)
@@ -69,7 +69,7 @@ class PipelineDecisionTypeLookup(Base):
     __tablename__ = "pipeline_decision_type_lookup"
     id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid     = Column(String(1024), nullable=False)
-    stage_id    = Column(String(64), ForeignKey("pipeline_stage_lookup.id"), nullable=False)
+    stage_id    = Column(UUID(as_uuid=True), ForeignKey("pipeline_stage_lookup.id"), nullable=False)
     label       = Column(String(128), nullable=False)
     description = Column(Text, nullable=True)
 
@@ -134,13 +134,13 @@ class AcoustIDResultLookup(Base):
     description = Column(Text, nullable=True)
 
 
-class FileFormatLookup(Base):
-    __tablename__ = "file_format_lookup"
-    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid     = Column(String(1024), nullable=False)
-    label       = Column(String(128), nullable=False)
-    mime_type   = Column(String(64), nullable=True)
-    description = Column(Text, nullable=True)
+# class FileFormatLookup(Base):
+#     __tablename__ = "file_format_lookup"
+#     id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+#     mca_pid     = Column(String(1024), nullable=False)
+#     label       = Column(String(128), nullable=False)
+#     mime_type   = Column(String(64), nullable=True)
+#     description = Column(Text, nullable=True)
 
 
 class FileQualityFlagLookup(Base):
@@ -247,12 +247,12 @@ class ErrorTypeLookup(Base):
     __tablename__ = "error_type_lookup"
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
-    category_id     = Column(String(64), ForeignKey("error_category_lookup.id"), nullable=False)
+    category_id     = Column(UUID(as_uuid=True), ForeignKey("error_category_lookup.id"), nullable=False)
     label           = Column(String(128), nullable=False)
     http_status_code = Column(SmallInteger, nullable=True)  # for HTTP errors
     description     = Column(Text, nullable=True)
 
 
-class ReprocessReasonLookup2(Base):
-    # already defined above — placeholder comment only
-    pass
+# class ReprocessReasonLookup2(Base):
+#     # already defined above — placeholder comment only
+#     pass
