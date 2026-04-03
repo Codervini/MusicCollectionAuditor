@@ -50,11 +50,11 @@ class MetaProcessorRuns(Base):
     completed_at            = Column(TIMESTAMP(timezone=True), nullable=True)
 
     # ── Outcome FKs ──────────────────────────────────────────────────
-    file_ingest_id          = Column(UUID(as_uuid=True), ForeignKey("file_ingest_log.id"), nullable=True)
-    resolved_metadata_id    = Column(UUID(as_uuid=True), ForeignKey("resolved_metadata.id"), nullable=True)
-    artwork_selection_id    = Column(UUID(as_uuid=True), ForeignKey("artwork_selection_log.id"), nullable=True)
-    file_save_id            = Column(UUID(as_uuid=True), ForeignKey("file_save_log.id"), nullable=True)
-    manual_review_id        = Column(UUID(as_uuid=True), ForeignKey("manual_review_log.id"), nullable=True)
+    # file_ingest_id          = Column(UUID(as_uuid=True), ForeignKey("file_ingest_log.id"), nullable=True)
+    # resolved_metadata_id    = Column(UUID(as_uuid=True), ForeignKey("resolved_metadata.id"), nullable=True)
+    # artwork_selection_id    = Column(UUID(as_uuid=True), ForeignKey("artwork_selection_log.id"), nullable=True)
+    # file_save_id            = Column(UUID(as_uuid=True), ForeignKey("file_save_log.id"), nullable=True)
+    # manual_review_id        = Column(UUID(as_uuid=True), ForeignKey("manual_review_log.id"), nullable=True)
     save_type               = Column(UUID(as_uuid=True), ForeignKey("save_type_lookup.id"), nullable=True)
 
     # ── Duplicate tracking ────────────────────────────────────────────
