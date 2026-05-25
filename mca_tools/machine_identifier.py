@@ -121,6 +121,9 @@ def machine_id():
             generate_new_machine_id(config,full_json,"user_defined")
             return machine_id()
     return None
+
+def mid_type():
+    return "user_defined"
 # json.dump()
 # machine_id()
 # print(machine_id())
