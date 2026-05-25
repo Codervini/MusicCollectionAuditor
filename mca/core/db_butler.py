@@ -10,11 +10,15 @@ from sqlalchemy.sql import func
 import enum  # Python's built-in enum — used to define the values
 import hashlib
 from mca_tools.machine_identifier import  machine_id
+from schema.base import Base, DB_ENGINE, SESSION_MANAGER
+import schema.models.meta_processor_universe as mp
+import mca_tools.enums as mca_enum
+from mca_tools.generate_uuidv7 import generate_uuidv7
 # #----- Constants -----------------------------------------------------------------
 # CONFIG_CONSTANTS = dotenv.dotenv_values(".env")
 # DB_ENGINE = create_engine(f"postgresql+psycopg://{CONFIG_CONSTANTS['DB_USERNAME']}:{CONFIG_CONSTANTS['DB_PASSWORD']}@localhost:5432/mcamusicdb")
 # SESSION_MANAGER = sessionmaker(bind=DB_ENGINE)
-# MACHINE_ID = machine_id()
+MACHINE_ID = machine_id()
 # Base = declarative_base()
 # # class Base(base):
 # #     pass
@@ -41,11 +45,13 @@ class Song:
             # Keys to uniquely find a file in db
             self.MACHINE_ID = MACHINE_ID
             self.file_path =  file_path
+            self.id = generate_uuidv7()
+            
 
 
             table_file_hash = self.fetch_file_hash_in_db()
             # table_file_path = self.fetch_column_data(Meta_Processor_Table.file_path)
-            table_machine_id = self.fetch_column_data(Meta_Processor_Table.machine_id)
+            table_machine_id = self.fetch_column_data(mp.MetaProcessorRuns.machine_id)
 
             if table_file_hash and table_machine_id:
                 print("Row already present")
@@ -53,14 +59,24 @@ class Song:
                 self.check_and_validate_if_hash_in_db_changed_externally()
             else:
                 with SESSION_MANAGER() as session:
-                    record = Meta_Processor_Table(
+                    record = mp.MetaProcessorRuns(
 
-                        #Process info
+                        id = self.id
+                        mca_pid = pass
+                        file_universe_id = pass
                         machine_id = self.MACHINE_ID,
+                        trigger = pass
+                        triggered_by_user_id = pass
+                        session_id = pass
+                        current_stage = pass
+                        current_phase = pass
+                        current_step = pass
+                        is_duplicate_of = pass
+
                         file_path  = self.file_path,
                         file_hash = self.calculate_file_hash(),
-                        status  = ProcessorStatus.pending,
-                        current_stage = PipelineStage.read_file,
+                        status  = mca_enum.ProcessorStatus.pending,
+                        current_stage = mca_enum.PipelineStage.read_file,
 
                         #Source file info
                         source_track_mbid   = source_track_mbid,
@@ -79,7 +95,7 @@ class Song:
                     session.commit()
 
     # Basic functions
-    def fetch_column_data(self, column):
+    def fetch_column_data(self, column, table):
         with SESSION_MANAGER() as session:
             command = select(column).where(
                 Meta_Processor_Table.machine_id == self.MACHINE_ID,

@@ -26,7 +26,6 @@ class MetaProcessorRuns(Base):
     __tablename__ = "meta_processor_runs"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    # mca_pid                 = Column(String(1024), nullable=False)
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     # file_universe_id        = Column(UUID(as_uuid=True), ForeignKey("file_universe.id"), nullable=False)
     song_library_id         = Column(UUID(as_uuid=True), nullable=True)           # filled when promoted
