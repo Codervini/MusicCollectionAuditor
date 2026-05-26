@@ -5,6 +5,8 @@ import machineid
 import socket
 import platform
 import datetime
+import binascii
+
 
 def generate_new_machine_id(path:Path, full_json:dict, id_type:str="system_defined"):
     '''type = user_defined or system_defined, generates new machine id data and returns newly generated id'''
@@ -92,7 +94,7 @@ def set_current_machine_id(path:Path,full_json:dict):
 
 def machine_id():
     '''Handles machine_id logic. Returns machine_id or else None if theres an error'''
-    config = Path("config","config.json")
+    config = Path("config.json").resolve()
 
     with open(config,"r") as f:
         full_json = json.load(f)
@@ -124,6 +126,27 @@ def machine_id():
 
 def mid_type():
     return "user_defined"
+
+def smid():
+    if mid_type() == "user_defined":
+        # print("Give a three letter unqiue nickname: ")
+        return "FD4"
+    elif mid_type() == "system_defined":
+        guidb32 = "a924b671bb9740a191f655f64e7986c1"
+        a = guidb32[0]
+        b = guidb32[10]
+        c = guidb32[20]
+        m = guidb32[30]
+        s = guidb32[31]
+        n = ord(b) ^ ord(m)
+        r = ord(c) ^ ord(s)
+        print(a)
+        print(chr(n),b,m)
+        print(chr(r),c,s)
+        return (a,chr(n),chr(r))
+
+smid()       
+
 # json.dump()
 # machine_id()
 # print(machine_id())
