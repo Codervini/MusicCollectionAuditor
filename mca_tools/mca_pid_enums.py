@@ -15,8 +15,6 @@ class table_family(enum.Enum):
     file_universe = "FLU"
     meta_processor_universe = "MPU"
 
-import enum
-
 
 class TableName(enum.Enum):
     # =========================================================================

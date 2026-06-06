@@ -7,23 +7,19 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import declarative_base, sessionmaker, base
 from sqlalchemy.sql import func
-import enum  # Python's built-in enum — used to define the values
+import enum  
 import hashlib
 from mca_tools.machine_identifier import  machine_id
 from schema.base import Base, DB_ENGINE, SESSION_MANAGER
 import schema.models.meta_processor_universe as mp
 import mca_tools.enums as mca_enum
 from mca_tools.generate_uuidv7 import generate_uuidv7
+from schema.mca_table_stats import record_row_count
+
 # #----- Constants -----------------------------------------------------------------
-# CONFIG_CONSTANTS = dotenv.dotenv_values(".env")
-# DB_ENGINE = create_engine(f"postgresql+psycopg://{CONFIG_CONSTANTS['DB_USERNAME']}:{CONFIG_CONSTANTS['DB_PASSWORD']}@localhost:5432/mcamusicdb")
-# SESSION_MANAGER = sessionmaker(bind=DB_ENGINE)
+
 MACHINE_ID = machine_id()
-# Base = declarative_base()
-# # class Base(base):
-# #     pass
-
-
+record_row_count()
 #------------Tools-----------------------------------------------------------------------------
 
 def db_init():
@@ -35,7 +31,6 @@ def count_table_rows(table):
     with SESSION_MANAGER() as session:
         count = session.scalar(select(func.count()).select_from(text(table)))
         return count
-
 
 
 
