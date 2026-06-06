@@ -1,40 +1,13 @@
 # MCA_PID = {MID} . {[V:F]} . {pkg} . {mod} . {TbF} . { [{ TbN } : {rowN}]...  } . {UUID v7}
 from mca_tools.machine_identifier import machine_id, mid_type, smid
 import enum
-from mca.core.db_butler import count_table_rows
-import math
-import base64
-
-b64URLChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
-
-def number_to_encodeb64URL_in_2char(n):
-    if n >= 64 * 64:
-        raise ValueError("Too large for 2 chars")
-    return b64URLChar[n // 64] + b64URLChar[n % 64]
-
-def number_to_encodeb64URL_in_4char(n):
-    reversed_b64URL = []
-    if n >= 64 ** 4:
-        raise ValueError("Too large for 4 chars")
-    for _ in range(0,4):
-        reversed_b64URL.append(b64URLChar[int(n % 64)])
-        n /= 64
-    reversed_b64URL.reverse()
-    return "".join(reversed_b64URL)
+from mca_tools.pid_utilities import b64URLChar , number_to_encodeb64URL_in_2char, number_to_encodeb64URL_in_4char
 
 
-def set_number(table):
-    setn =  math.floor(count_table_rows(table) / 16777215)
-    setnb64 = number_to_encodeb64URL_in_2char(setn)
-    # print(setn,setnb64)
-    return [setn,setnb64]
 
-def _total_row_number(table):
-    rownum = count_table_rows(table) // (set_number(table)[0] + 1)
-    rownumb64 = number_to_encodeb64URL_in_4char(rownum)
-    return [rownum,rownumb64]
 
-def tables_row_number(table):
+
+# def tables_row_number(table):
 
 
 

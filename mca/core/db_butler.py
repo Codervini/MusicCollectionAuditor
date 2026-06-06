@@ -13,13 +13,13 @@ from mca_tools.machine_identifier import  machine_id
 from schema.base import Base, DB_ENGINE, SESSION_MANAGER
 import schema.models.meta_processor_universe as mp
 import mca_tools.enums as mca_enum
-from mca_tools.generate_uuidv7 import generate_uuidv7
-from schema.mca_table_stats import record_row_count
-
+from mca_tools.utils import generate_uuidv7
+# from schema.mca_table_stats import record_row_count
+import math
 # #----- Constants -----------------------------------------------------------------
 
 MACHINE_ID = machine_id()
-record_row_count()
+# record_row_count()
 #------------Tools-----------------------------------------------------------------------------
 
 def db_init():
