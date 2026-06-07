@@ -31,7 +31,7 @@ class MetaProcessorRuns(Base):
     song_library_id         = Column(UUID(as_uuid=True), nullable=True)           # filled when promoted
 
     # ── Run context ───────────────────────────────────────────────────
-    trigger                 = Column(UUID(as_uuid=True), ForeignKey("run_trigger_lookup.id"), nullable=False)
+    trigger                 = Column(SmallInteger, ForeignKey("run_trigger_lookup.id"), nullable=False)
     machine_id              = Column(String(64), ForeignKey("machines.id"), nullable=False)
 
     # triggered_by_user_id    = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
@@ -39,9 +39,9 @@ class MetaProcessorRuns(Base):
 
     # ── Live pipeline state ───────────────────────────────────────────
     # status                  = Column(UUID(as_uuid=True), ForeignKey("processor_status_lookup.id"), nullable=False, server_default="pending")
-    current_stage           = Column(UUID(as_uuid=True), ForeignKey("pipeline_stage_lookup.id"), nullable=True)
-    current_phase           = Column(UUID(as_uuid=True), ForeignKey("pipeline_phase_lookup.id"), nullable=True)
-    current_step            = Column(UUID(as_uuid=True), ForeignKey("pipeline_step_lookup.id"), nullable=True)
+    current_stage           = Column(SmallInteger, ForeignKey("pipeline_stage_lookup.id"), nullable=True)
+    current_phase           = Column(SmallInteger, ForeignKey("pipeline_phase_lookup.id"), nullable=True)
+    current_step            = Column(SmallInteger, ForeignKey("pipeline_step_lookup.id"), nullable=True)
 
     # ── Timestamps ───────────────────────────────────────────────────
     created_at              = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -54,7 +54,7 @@ class MetaProcessorRuns(Base):
     # artwork_selection_id    = Column(UUID(as_uuid=True), ForeignKey("artwork_selection_log.id"), nullable=True)
     # file_save_id            = Column(UUID(as_uuid=True), ForeignKey("file_save_log.id"), nullable=True)
     # manual_review_id        = Column(UUID(as_uuid=True), ForeignKey("manual_review_log.id"), nullable=True)
-    save_type               = Column(UUID(as_uuid=True), ForeignKey("save_type_lookup.id"), nullable=True)
+    save_type               = Column(SmallInteger, ForeignKey("save_type_lookup.id"), nullable=True)
 
     # ── Duplicate tracking ────────────────────────────────────────────
     is_duplicate_of         = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=True)
@@ -84,7 +84,7 @@ class MetaProcessorReprocessLog(Base):
     mca_pid             = Column(String(1024), nullable=False, unique=True)
     new_run_id          = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     previous_run_id     = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
-    reason              = Column(UUID(as_uuid=True), ForeignKey("reprocess_reason_lookup.id"), nullable=False)
+    reason              = Column(SmallInteger, ForeignKey("reprocess_reason_lookup.id"), nullable=False)
     note                = Column(Text, nullable=True)
     # triggered_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     machine_id          = Column(String(64), ForeignKey("machines.id"), nullable=False)
@@ -107,10 +107,10 @@ class RunStageLog(Base):
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
-    stage                   = Column(UUID(as_uuid=True), ForeignKey("pipeline_stage_lookup.id"), nullable=False)
+    stage                   = Column(SmallInteger, ForeignKey("pipeline_stage_lookup.id"), nullable=False)
     started_at              = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     completed_at            = Column(TIMESTAMP(timezone=True), nullable=True)
-    outcome                 = Column(UUID(as_uuid=True), ForeignKey("service_result_lookup.id"), nullable=True)
+    outcome                 = Column(SmallInteger, ForeignKey("service_result_lookup.id"), nullable=True)
     machine_id              = Column(String(64), ForeignKey("machines.id"), nullable=False)
     # triggered_by_user_id    = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     # session_id              = Column(UUID(as_uuid=True), ForeignKey("user_sessions.id"), nullable=True)
@@ -130,7 +130,7 @@ class RunPhaseLog(Base):
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     stage_log_id            = Column(UUID(as_uuid=True), ForeignKey("run_stage_log.id"), nullable=False)
-    phase                   = Column(UUID(as_uuid=True), ForeignKey("pipeline_phase_lookup.id"), nullable=False)
+    phase                   = Column(SmallInteger, ForeignKey("pipeline_phase_lookup.id"), nullable=False)
     started_at              = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     completed_at            = Column(TIMESTAMP(timezone=True), nullable=True)
     machine_id              = Column(String(64), ForeignKey("machines.id"), nullable=False)
@@ -151,10 +151,10 @@ class RunStepLog(Base):
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     phase_log_id            = Column(UUID(as_uuid=True), ForeignKey("run_phase_log.id"), nullable=False)
-    step                    = Column(UUID(as_uuid=True), ForeignKey("pipeline_step_lookup.id"), nullable=False)
+    step                    = Column(SmallInteger, ForeignKey("pipeline_step_lookup.id"), nullable=False)
     started_at              = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     completed_at            = Column(TIMESTAMP(timezone=True), nullable=True)
-    result                  = Column(UUID(as_uuid=True), ForeignKey("service_result_lookup.id"), nullable=True)
+    result                  = Column(SmallInteger, ForeignKey("service_result_lookup.id"), nullable=True)
     machine_id              = Column(String(64), ForeignKey("machines.id"), nullable=False)
     note                    = Column(Text, nullable=True)
 
@@ -177,8 +177,8 @@ class RunDecisionLog(Base):
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     step_log_id             = Column(UUID(as_uuid=True), ForeignKey("run_step_log.id"), nullable=True)
-    decision_type           = Column(UUID(as_uuid=True), ForeignKey("pipeline_decision_type_lookup.id"), nullable=False)
-    branch_taken            = Column(UUID(as_uuid=True), ForeignKey("decision_branch_lookup.id"), nullable=False)
+    decision_type           = Column(SmallInteger, ForeignKey("pipeline_decision_type_lookup.id"), nullable=False)
+    branch_taken            = Column(SmallInteger, ForeignKey("decision_branch_lookup.id"), nullable=False)
     evaluated_value         = Column(Text, nullable=True)       # what value was tested e.g. the actual MBID string
     reason                  = Column(Text, nullable=True)       # why this branch was taken
     evaluated_at            = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -213,12 +213,12 @@ class FileIngestLog(Base):
     file_path                       = Column(Text, nullable=False)
     file_name                       = Column(Text, nullable=False)
     file_extension                  = Column(String(16), nullable=True)
-    file_format                     = Column(UUID(as_uuid=True), ForeignKey("file_format_lookup.id"), nullable=True)
+    file_format                     = Column(SmallInteger, ForeignKey("file_format_lookup.id"), nullable=True)
     file_size_bytes                 = Column(Integer, nullable=True)
     file_hash                       = Column(String(64), nullable=False)        # SHA-256 whole file
     audio_hash                      = Column(String(64), nullable=True)         # SHA-256 audio stream only
     last_known_hash                 = Column(String(64), nullable=True)
-    hash_changed_by                 = Column(UUID(as_uuid=True), ForeignKey("hash_changed_by_lookup.id"), nullable=True)
+    hash_changed_by                 = Column(SmallInteger, ForeignKey("hash_changed_by_lookup.id"), nullable=True)
 
     # ── Technical properties ──────────────────────────────────────────
     duration_ms                     = Column(Integer, nullable=True)
@@ -279,7 +279,7 @@ class FileQualityCheckLog(Base):
     mca_pid         = Column(String(1024), nullable=False, unique=True)
     run_id          = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     ingest_id       = Column(UUID(as_uuid=True), ForeignKey("file_ingest_log.id"), nullable=False)
-    flag            = Column(UUID(as_uuid=True), ForeignKey("file_quality_flag_lookup.id"), nullable=False)
+    flag            = Column(SmallInteger, ForeignKey("file_quality_flag_lookup.id"), nullable=False)
     is_blocking     = Column(Boolean, nullable=False, server_default=text("false"))
     detail          = Column(Text, nullable=True)           # e.g. "duration: 3200ms, threshold: 10000ms"
     checked_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -309,10 +309,10 @@ class MBIDValidationLog(Base):
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     mbid                    = Column(String(36), nullable=False)
     mbid_type               = Column(UUID(as_uuid=True), nullable=False)                # track or album
-    mbid_source             = Column(UUID(as_uuid=True), ForeignKey("mbid_source_lookup.id"), nullable=False)
-    result                  = Column(UUID(as_uuid=True), ForeignKey("mbid_validation_result_lookup.id"), nullable=False)
-    triggered_at_stage      = Column(UUID(as_uuid=True), ForeignKey("pipeline_stage_lookup.id"), nullable=False)
-    triggered_at_step       = Column(UUID(as_uuid=True), ForeignKey("pipeline_step_lookup.id"), nullable=False)
+    mbid_source             = Column(SmallInteger, ForeignKey("mbid_source_lookup.id"), nullable=False)
+    result                  = Column(SmallInteger, ForeignKey("mbid_validation_result_lookup.id"), nullable=False)
+    triggered_at_stage      = Column(SmallInteger, ForeignKey("pipeline_stage_lookup.id"), nullable=False)
+    triggered_at_step       = Column(SmallInteger, ForeignKey("pipeline_step_lookup.id"), nullable=False)
     validated_at            = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     machine_id              = Column(String(64), ForeignKey("machines.id"), nullable=False)
     raw_response            = Column(JSONB, nullable=True)
@@ -339,9 +339,9 @@ class MetadataFetchLog(Base):
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
-    service                 = Column(UUID(as_uuid=True), ForeignKey("service_lookup.id"), nullable=False)
+    service                 = Column(SmallInteger, ForeignKey("service_lookup.id"), nullable=False)
     call_order              = Column(SmallInteger, nullable=False)               # position in the chain
-    result                  = Column(UUID(as_uuid=True), ForeignKey("service_result_lookup.id"), nullable=False)
+    result                  = Column(SmallInteger, ForeignKey("service_result_lookup.id"), nullable=False)
     skipped_reason          = Column(Text, nullable=True)                        # why skipped if result=skipped
     called_at               = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     completed_at            = Column(TIMESTAMP(timezone=True), nullable=True)
@@ -372,8 +372,8 @@ class MetadataFetchFields(Base):
     mca_pid             = Column(String(1024), nullable=False, unique=True)
     run_id              = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     fetch_log_id        = Column(UUID(as_uuid=True), ForeignKey("metadata_fetch_log.id"), nullable=False)
-    service             = Column(UUID(as_uuid=True), ForeignKey("service_lookup.id"), nullable=False)
-    field               = Column(UUID(as_uuid=True), ForeignKey("metadata_field_lookup.id"), nullable=False)
+    service             = Column(SmallInteger, ForeignKey("service_lookup.id"), nullable=False)
+    field               = Column(SmallInteger, ForeignKey("metadata_field_lookup.id"), nullable=False)
     value_text          = Column(Text, nullable=True)                   # for text fields
     value_integer       = Column(Integer, nullable=True)                # for integer fields
     value_numeric       = Column(Numeric(10, 4), nullable=True)         # for decimal fields
@@ -449,7 +449,7 @@ class ResolvedMetadataExtended(Base):
     mca_pid             = Column(String(1024), nullable=False, unique=True)
     run_id              = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     resolved_id         = Column(UUID(as_uuid=True), ForeignKey("resolved_metadata.id"), nullable=False)
-    field               = Column(UUID(as_uuid=True), ForeignKey("metadata_field_lookup.id"), nullable=False)
+    field               = Column(SmallInteger, ForeignKey("metadata_field_lookup.id"), nullable=False)
     value_text          = Column(Text, nullable=True)
     value_integer       = Column(Integer, nullable=True)
     value_numeric       = Column(Numeric(10, 4), nullable=True)
@@ -477,8 +477,8 @@ class ResolvedMetadataSources(Base):
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
-    field                   = Column(UUID(as_uuid=True), ForeignKey("metadata_field_lookup.id"), nullable=False)
-    winning_service         = Column(UUID(as_uuid=True), ForeignKey("service_lookup.id"), nullable=True)
+    field                   = Column(SmallInteger, ForeignKey("metadata_field_lookup.id"), nullable=False)
+    winning_service         = Column(SmallInteger, ForeignKey("service_lookup.id"), nullable=True)
     winning_value_text      = Column(Text, nullable=True)
     winning_value_integer   = Column(Integer, nullable=True)
     winning_value_numeric   = Column(Numeric(10, 4), nullable=True)
@@ -513,16 +513,16 @@ class ArtworkFetchLog(Base):
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
-    service                 = Column(UUID(as_uuid=True), ForeignKey("artwork_source_lookup.id"), nullable=False)
+    service                 = Column(SmallInteger, ForeignKey("artwork_source_lookup.id"), nullable=False)
     call_order              = Column(SmallInteger, nullable=False)
-    result                  = Column(UUID(as_uuid=True), ForeignKey("service_result_lookup.id"), nullable=False)
+    result                  = Column(SmallInteger, ForeignKey("service_result_lookup.id"), nullable=False)
     skipped_reason          = Column(Text, nullable=True)
     artwork_url             = Column(Text, nullable=True)
     artwork_local_path      = Column(Text, nullable=True)
     width_px                = Column(Integer, nullable=True)
     height_px               = Column(Integer, nullable=True)
     file_size_bytes         = Column(Integer, nullable=True)
-    format                  = Column(UUID(as_uuid=True), ForeignKey("artwork_format_lookup.id"), nullable=True)
+    format                  = Column(SmallInteger, ForeignKey("artwork_format_lookup.id"), nullable=True)
     raw_response            = Column(JSONB, nullable=True)
     fetched_at              = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     machine_id              = Column(String(64), ForeignKey("machines.id"), nullable=False)
@@ -573,7 +573,7 @@ class FileSaveLog(Base):
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
-    save_type               = Column(UUID(as_uuid=True), ForeignKey("save_type_lookup.id"), nullable=False)
+    save_type               = Column(SmallInteger, ForeignKey("save_type_lookup.id"), nullable=False)
     # initiated_by_user_id    = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     machine_id              = Column(String(64), ForeignKey("machines.id"), nullable=False)
     # session_id              = Column(UUID(as_uuid=True), ForeignKey("user_sessions.id"), nullable=True)
@@ -602,8 +602,8 @@ class FileSaveFieldLog(Base):
     mca_pid             = Column(String(1024), nullable=False, unique=True)
     save_log_id         = Column(UUID(as_uuid=True), ForeignKey("file_save_log.id"), nullable=False)
     run_id              = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
-    field               = Column(UUID(as_uuid=True), ForeignKey("metadata_field_lookup.id"), nullable=False)
-    status              = Column(UUID(as_uuid=True), ForeignKey("save_field_status_lookup.id"), nullable=False)
+    field               = Column(SmallInteger, ForeignKey("metadata_field_lookup.id"), nullable=False)
+    status              = Column(SmallInteger, ForeignKey("save_field_status_lookup.id"), nullable=False)
     value_written       = Column(Text, nullable=True)       # the actual value written
     previous_value      = Column(Text, nullable=True)       # what was in the tag before
     note                = Column(Text, nullable=True)
@@ -646,7 +646,7 @@ class PicardSessionLog(Base):
     picard_raw_result       = Column(JSONB, nullable=True)
 
     # ── What the user did inside Picard ───────────────────────────────
-    user_action             = Column(UUID(as_uuid=True), ForeignKey("picard_action_lookup.id"), nullable=True)
+    user_action             = Column(SmallInteger, ForeignKey("picard_action_lookup.id"), nullable=True)
     user_changes            = Column(JSONB, nullable=True)      # field-level changes user made in Picard
     user_action_at          = Column(TIMESTAMP(timezone=True), nullable=True)
 
@@ -676,9 +676,9 @@ class UserConsentLog(Base):
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
-    consent_type            = Column(UUID(as_uuid=True), ForeignKey("consent_type_lookup.id"), nullable=False)
-    service                 = Column(UUID(as_uuid=True), ForeignKey("service_lookup.id"), nullable=True)    # if service_call type
-    decision                = Column(UUID(as_uuid=True), ForeignKey("consent_decision_lookup.id"), nullable=False)
+    consent_type            = Column(SmallInteger, ForeignKey("consent_type_lookup.id"), nullable=False)
+    service                 = Column(SmallInteger, ForeignKey("service_lookup.id"), nullable=True)    # if service_call type
+    decision                = Column(SmallInteger, ForeignKey("consent_decision_lookup.id"), nullable=False)
     # decided_by_user_id      = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     decided_at              = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     revoked_at              = Column(TIMESTAMP(timezone=True), nullable=True)
@@ -709,13 +709,13 @@ class ManualReviewLog(Base):
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     reasons                 = Column(ARRAY(Text), nullable=False)               # array of manual_review_reason_lookup ids
-    triggered_at_stage      = Column(UUID(as_uuid=True), ForeignKey("pipeline_stage_lookup.id"), nullable=False)
-    triggered_at_step       = Column(UUID(as_uuid=True), ForeignKey("pipeline_step_lookup.id"), nullable=False)
+    triggered_at_stage      = Column(SmallInteger, ForeignKey("pipeline_stage_lookup.id"), nullable=False)
+    triggered_at_step       = Column(SmallInteger, ForeignKey("pipeline_step_lookup.id"), nullable=False)
     triggered_at            = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     # triggered_by_user_id    = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     # assigned_to_user_id     = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     assigned_at             = Column(TIMESTAMP(timezone=True), nullable=True)
-    resolution              = Column(UUID(as_uuid=True), ForeignKey("manual_review_resolution_lookup.id"), nullable=True)
+    resolution              = Column(SmallInteger, ForeignKey("manual_review_resolution_lookup.id"), nullable=True)
     # resolved_by_user_id     = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     resolved_at             = Column(TIMESTAMP(timezone=True), nullable=True)
     resolution_note         = Column(Text, nullable=True)
@@ -744,10 +744,10 @@ class ManualReviewFieldLog(Base):
     mca_pid                 = Column(String(1024), nullable=False, unique=True)
     review_id               = Column(UUID(as_uuid=True), ForeignKey("manual_review_log.id"), nullable=False)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
-    field                   = Column(UUID(as_uuid=True), ForeignKey("metadata_field_lookup.id"), nullable=False)
+    field                   = Column(SmallInteger, ForeignKey("metadata_field_lookup.id"), nullable=False)
     old_value               = Column(Text, nullable=True)
     new_value               = Column(Text, nullable=True)
-    value_source            = Column(UUID(as_uuid=True), ForeignKey("service_lookup.id"), nullable=True)
+    value_source            = Column(SmallInteger, ForeignKey("service_lookup.id"), nullable=True)
     confidence_override     = Column(Numeric(5, 4), nullable=True)
     confidence_note         = Column(Text, nullable=True)
     # decided_by_user_id      = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
@@ -780,14 +780,14 @@ class RunErrorLog(Base):
     machine_id          = Column(String(64), ForeignKey("machines.id"), nullable=False)
     # session_id          = Column(UUID(as_uuid=True), ForeignKey("user_sessions.id"), nullable=True)
     occurred_at         = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
-    stage               = Column(UUID(as_uuid=True), ForeignKey("pipeline_stage_lookup.id"), nullable=False)
-    step                = Column(UUID(as_uuid=True), ForeignKey("pipeline_step_lookup.id"), nullable=False)
+    stage               = Column(SmallInteger, ForeignKey("pipeline_stage_lookup.id"), nullable=False)
+    step                = Column(SmallInteger, ForeignKey("pipeline_step_lookup.id"), nullable=False)
     retry_number        = Column(SmallInteger, nullable=False, server_default=text("0"))
-    error_category      = Column(UUID(as_uuid=True), ForeignKey("error_category_lookup.id"), nullable=False)
-    error_type          = Column(UUID(as_uuid=True), ForeignKey("error_type_lookup.id"), nullable=False)
+    error_category      = Column(SmallInteger, ForeignKey("error_category_lookup.id"), nullable=False)
+    error_type          = Column(SmallInteger, ForeignKey("error_type_lookup.id"), nullable=False)
     error_message       = Column(Text, nullable=False)
     error_traceback     = Column(Text, nullable=True)
-    service             = Column(UUID(as_uuid=True), ForeignKey("service_lookup.id"), nullable=True)
+    service             = Column(SmallInteger, ForeignKey("service_lookup.id"), nullable=True)
 
     # ── HTTP details ──────────────────────────────────────────────────
     http_status_code    = Column(SmallInteger, nullable=True)

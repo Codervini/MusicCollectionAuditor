@@ -50,11 +50,11 @@ class Artists(Base):
     mca_pid          = Column(String(1024), nullable=False)
     name             = Column(Text, nullable=False)                         # display name e.g. "Freddie Mercury"
     sort_name        = Column(Text, nullable=True)                          # sortable e.g. "Mercury, Freddie"
-    type_id          = Column(UUID(as_uuid=True), ForeignKey("artist_type_lookup.id"), nullable=True)
-    gender_id        = Column(UUID(as_uuid=True), ForeignKey("gender_lookup.id"), nullable=True)
+    type_id          = Column(SmallInteger, ForeignKey("artist_type_lookup.id"), nullable=True)
+    gender_id        = Column(SmallInteger, ForeignKey("gender_lookup.id"), nullable=True)
     mb_artist_id     = Column(String(36), nullable=True)                    # MusicBrainz artist ID
     isni             = Column(String(16), nullable=True)                    # International Standard Name Identifier
-    country_id       = Column(UUID(as_uuid=True), ForeignKey("country_lookup.id"), nullable=True)  # replaces raw country string
+    country_id       = Column(SmallInteger, ForeignKey("country_lookup.id"), nullable=True)  # replaces raw country string
     born_or_formed   = Column(Date, nullable=True)
     died_or_disbanded= Column(Date, nullable=True)
     disambiguation   = Column(Text, nullable=True)                          # e.g. "Queen guitarist" if name clash
@@ -82,10 +82,10 @@ class ArtistAliases(Base):
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     artist_id       = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
-    alias_type_id   = Column(UUID(as_uuid=True), ForeignKey("alias_types_lookup.id"), nullable=False)
+    alias_type_id   = Column(SmallInteger, ForeignKey("alias_types_lookup.id"), nullable=False)
     name            = Column(Text, nullable=False)                          # the alias
     sort_name       = Column(Text, nullable=True)
-    locale_id       = Column(UUID(as_uuid=True), ForeignKey("locale_lookup.id"), nullable=True)   # replaces raw locale string
+    locale_id       = Column(SmallInteger, ForeignKey("locale_lookup.id"), nullable=True)   # replaces raw locale string
     is_primary      = Column(Boolean, nullable=False, server_default=text("false"))
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
@@ -108,7 +108,7 @@ class ArtistLinks(Base):
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     artist_id       = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
-    link_type_id    = Column(UUID(as_uuid=True), ForeignKey("link_types_lookup.id"), nullable=False)
+    link_type_id    = Column(SmallInteger, ForeignKey("link_types_lookup.id"), nullable=False)
     url             = Column(Text, nullable=False)
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
@@ -137,9 +137,9 @@ class Works(Base):
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     title           = Column(Text, nullable=False)                          # song name
-    type_id         = Column(UUID(as_uuid=True), ForeignKey("work_type_lookup.id"), nullable=True)
+    type_id         = Column(SmallInteger, ForeignKey("work_type_lookup.id"), nullable=True)
     iswc            = Column(String(15), nullable=True)                     # International Standard Musical Work Code
-    language_id     = Column(UUID(as_uuid=True), ForeignKey("iso_language_lookup.id"), nullable=True)  # replaces raw language string
+    language_id     = Column(SmallInteger, ForeignKey("iso_language_lookup.id"), nullable=True)  # replaces raw language string
     mbid            = Column(String(36), nullable=True)                     # MusicBrainz work ID
     raw_mb_response = Column(JSONB, nullable=True)
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -167,8 +167,8 @@ class WorkCredits(Base):
     mca_pid             = Column(String(1024), nullable=False)
     work_id             = Column(UUID(as_uuid=True), ForeignKey("works.id"), nullable=False)
     artist_id           = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
-    role_id             = Column(UUID(as_uuid=True), ForeignKey("artist_roles_lookup.id"), nullable=False)
-    credit_source_id    = Column(UUID(as_uuid=True), ForeignKey("credit_source_lookup.id"), nullable=True)
+    role_id             = Column(SmallInteger, ForeignKey("artist_roles_lookup.id"), nullable=False)
+    credit_source_id    = Column(SmallInteger, ForeignKey("credit_source_lookup.id"), nullable=True)
     credit_source_url   = Column(Text, nullable=True)                       # direct URL to credit attribution
     credit_order        = Column(SmallInteger, nullable=False, server_default=text("1"))
     note                = Column(Text, nullable=True)
@@ -206,7 +206,7 @@ class Recordings(Base):
     id                   = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid              = Column(String(1024), nullable=False)
     work_id              = Column(UUID(as_uuid=True), ForeignKey("works.id"), nullable=False)
-    version_type_id      = Column(UUID(as_uuid=True), ForeignKey("version_type_lookup.id"), nullable=False)
+    version_type_id      = Column(SmallInteger, ForeignKey("version_type_lookup.id"), nullable=False)
     official_title       = Column(Text, nullable=False)                     # canonical credited title
     version_name         = Column(Text, nullable=True)                      # e.g. "Live Aid 1985", "2011 Remaster"
     title                = Column(Text, nullable=False)                     # full display title incl version
@@ -215,7 +215,7 @@ class Recordings(Base):
     acoustid_mbid        = Column(String(36), nullable=True)
     mb_recording_id      = Column(String(36), nullable=True)                # MusicBrainz recording ID
     isrc                 = Column(String(12), nullable=True)
-    language_id          = Column(UUID(as_uuid=True), ForeignKey("iso_language_lookup.id"), nullable=True)
+    language_id          = Column(SmallInteger, ForeignKey("iso_language_lookup.id"), nullable=True)
     raw_mb_response      = Column(JSONB, nullable=True)
     created_at           = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at           = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
@@ -245,8 +245,8 @@ class RecordingCredits(Base):
     mca_pid             = Column(String(1024), nullable=False)
     recording_id        = Column(UUID(as_uuid=True), ForeignKey("recordings.id"), nullable=False)
     artist_id           = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
-    role_id             = Column(UUID(as_uuid=True), ForeignKey("artist_roles_lookup.id"), nullable=False)
-    credit_source_id    = Column(UUID(as_uuid=True), ForeignKey("credit_source_lookup.id"), nullable=True)
+    role_id             = Column(SmallInteger, ForeignKey("artist_roles_lookup.id"), nullable=False)
+    credit_source_id    = Column(SmallInteger, ForeignKey("credit_source_lookup.id"), nullable=True)
     credit_source_url   = Column(Text, nullable=True)
     credit_order        = Column(SmallInteger, nullable=False, server_default=text("1"))
     note                = Column(Text, nullable=True)
@@ -278,11 +278,11 @@ class Releases(Base):
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=False)
     title           = Column(Text, nullable=False)
-    type_id         = Column(UUID(as_uuid=True), ForeignKey("release_type_lookup.id"), nullable=True)
+    type_id         = Column(SmallInteger, ForeignKey("release_type_lookup.id"), nullable=True)
     year            = Column(SmallInteger, nullable=True)
     date            = Column(Date, nullable=True)
     label           = Column(Text, nullable=True)
-    country_id      = Column(UUID(as_uuid=True), ForeignKey("country_lookup.id"), nullable=True)    # replaces raw country string
+    country_id      = Column(SmallInteger, ForeignKey("country_lookup.id"), nullable=True)    # replaces raw country string
     barcode         = Column(String(32), nullable=True)
     mb_release_id   = Column(String(36), nullable=True)
     artwork_url     = Column(Text, nullable=True)
@@ -316,8 +316,8 @@ class ReleaseCredits(Base):
     mca_pid             = Column(String(1024), nullable=False)
     release_id          = Column(UUID(as_uuid=True), ForeignKey("releases.id"), nullable=False)
     artist_id           = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
-    role_id             = Column(UUID(as_uuid=True), ForeignKey("artist_roles_lookup.id"), nullable=False)
-    credit_source_id    = Column(UUID(as_uuid=True), ForeignKey("credit_source_lookup.id"), nullable=True)
+    role_id             = Column(SmallInteger, ForeignKey("artist_roles_lookup.id"), nullable=False)
+    credit_source_id    = Column(SmallInteger, ForeignKey("credit_source_lookup.id"), nullable=True)
     credit_source_url   = Column(Text, nullable=True)
     credit_order        = Column(SmallInteger, nullable=False, server_default=text("1"))
     note                = Column(Text, nullable=True)
@@ -390,7 +390,7 @@ class PhysicalFiles(Base):
 
     # Core identity
     recording_id         = Column(UUID(as_uuid=True), ForeignKey("recordings.id"), nullable=False)
-    format_id            = Column(UUID(as_uuid=True), ForeignKey("file_format_lookup.id"), nullable=False)
+    format_id            = Column(SmallInteger, ForeignKey("file_format_lookup.id"), nullable=False)
 
     # File system
     file_path            = Column(Text, nullable=False)                     # full path on disk
@@ -456,7 +456,7 @@ class FileQualityProfile(Base):
     id               = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid          = Column(String(1024), nullable=False)
     physical_file_id = Column(UUID(as_uuid=True), ForeignKey("physical_files.id"), nullable=False, unique=True)
-    quality_tier_id  = Column(UUID(as_uuid=True), ForeignKey("quality_tier_lookup.id"), nullable=True)
+    quality_tier_id  = Column(SmallInteger, ForeignKey("quality_tier_lookup.id"), nullable=True)
     quality_label    = Column(String(128), nullable=True)                   # e.g. "FLAC 96kHz/24bit"
     computed_at      = Column(TIMESTAMP(timezone=True), nullable=True)      # null = not yet computed
     created_at       = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -485,10 +485,10 @@ class Tags(Base):
 
     id             = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid        = Column(String(1024), nullable=False)
-    entity_type_id = Column(UUID(as_uuid=True), ForeignKey("entity_type_lookup.id"), nullable=False)
+    entity_type_id = Column(SmallInteger, ForeignKey("entity_type_lookup.id"), nullable=False)
     entity_id      = Column(UUID(as_uuid=True), nullable=False)             # points to whichever table
-    tag_id         = Column(UUID(as_uuid=True), ForeignKey("tag_lookup.id"), nullable=False)   # replaces free-text tag
-    source_id      = Column(UUID(as_uuid=True), ForeignKey("tag_source_lookup.id"), nullable=False)
+    tag_id         = Column(SmallInteger, ForeignKey("tag_lookup.id"), nullable=False)   # replaces free-text tag
+    source_id      = Column(SmallInteger, ForeignKey("tag_source_lookup.id"), nullable=False)
     created_at     = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at     = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     updated_by     = Column(String(64), ForeignKey("machines.id"), nullable=True)
