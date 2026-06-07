@@ -2,7 +2,7 @@ import dotenv
 from sqlalchemy import (
     Column, Text, Boolean, SmallInteger, Numeric,
     String, TIMESTAMP, ARRAY, Index, text, create_engine, Enum,
-    UniqueConstraint, ForeignKey, select , event
+    UniqueConstraint, ForeignKey, select , event, inspect, MetaData , Table
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import declarative_base, sessionmaker, base
@@ -13,9 +13,11 @@ from mca_tools.machine_identifier import  machine_id
 from schema.base import Base, DB_ENGINE, SESSION_MANAGER
 import schema.models.meta_processor_universe as mp
 import mca_tools.enums as mca_enum
+from mca_tools.pid_enums import TableName as tb
 from mca_tools.utils import generate_uuidv7
 # from schema.mca_table_stats import record_row_count
 import math
+from pprint import pprint
 # #----- Constants -----------------------------------------------------------------
 
 MACHINE_ID = machine_id()
@@ -32,6 +34,51 @@ def count_table_rows(table):
         count = session.scalar(select(func.count()).select_from(text(table)))
         return count
 
+def get_fk_keys_in_table(table):
+    '''Returns foreign keys column in current table with the refernced tablename and id
+    { fk_column: (refernced_table, id) }'''
+    keys = inspect(DB_ENGINE).get_foreign_keys(table)
+    di = {}
+    for i in keys:
+        di[i["constrained_columns"][0]] = (i["referred_table"],i["referred_columns"][0])
+    return di
+
+def get_value_in_a_referenced_table_column(current_table, current_table_pk, fk_key, column ):
+    metadata = MetaData()
+    current = Table(
+        current_table,
+        metadata,
+        autoload_with=DB_ENGINE
+    )
+    fk_info = get_fk_keys_in_table(current_table)
+    ref_table_name, ref_pk_column = fk_info[fk_key]
+    referenced = Table(
+        ref_table_name,
+        metadata,
+        autoload_with=DB_ENGINE
+    )
+
+    current_pk_column = list(current.primary_key.columns)[0]
+    with SESSION_MANAGER() as session:
+        fk_value = session.execute(
+            select(current.c[fk_key])
+            .where(current_pk_column == current_table_pk)
+        ).scalar_one()
+
+        return session.execute(
+            select(referenced.c[column])
+            .where(referenced.c[ref_pk_column] == fk_value)
+        ).scalar_one_or_none()
+
+get_value_in_a_referenced_table_column("meta_processor_runs",)
+
+def get_column_data_with_id(tablename, id, column):
+     with SESSION_MANAGER() as session:
+            command = select(column).where(tablename.id == id)
+            return session.execute(command).scalar_one_or_none()
+
+a = get_fk_keys_in_table(tb.MPR.value)
+pprint(a)
 
 
 class Song:
