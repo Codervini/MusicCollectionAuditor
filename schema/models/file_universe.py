@@ -47,12 +47,12 @@ class Artists(Base):
     __tablename__ = "artists"
 
     id               = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid          = Column(String(1024), nullable=False)
+    mca_pid          = Column(String(1024), nullable=True)
     name             = Column(Text, nullable=False)                         # display name e.g. "Freddie Mercury"
     sort_name        = Column(Text, nullable=True)                          # sortable e.g. "Mercury, Freddie"
     type_id          = Column(SmallInteger, ForeignKey("artist_type_lookup.id"), nullable=True)
     gender_id        = Column(SmallInteger, ForeignKey("gender_lookup.id"), nullable=True)
-    mb_artist_id     = Column(String(36), nullable=True)                    # MusicBrainz artist ID
+    mbid             = Column(String(36), nullable=True, unique=True)                    # MusicBrainz artist ID
     isni             = Column(String(16), nullable=True)                    # International Standard Name Identifier
     country_id       = Column(SmallInteger, ForeignKey("country_lookup.id"), nullable=True)  # replaces raw country string
     born_or_formed   = Column(Date, nullable=True)
@@ -80,7 +80,7 @@ class ArtistAliases(Base):
     __tablename__ = "artist_aliases"
 
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid         = Column(String(1024), nullable=False)
+    mca_pid         = Column(String(1024), nullable=True)
     artist_id       = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
     alias_type_id   = Column(SmallInteger, ForeignKey("alias_types_lookup.id"), nullable=False)
     name            = Column(Text, nullable=False)                          # the alias
@@ -106,7 +106,7 @@ class ArtistLinks(Base):
     __tablename__ = "artist_info_source"
 
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid         = Column(String(1024), nullable=False)
+    mca_pid         = Column(String(1024), nullable=True)
     artist_id       = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
     link_type_id    = Column(SmallInteger, ForeignKey("link_types_lookup.id"), nullable=False)
     url             = Column(Text, nullable=False)
@@ -135,7 +135,7 @@ class Works(Base):
     __tablename__ = "works"
 
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid         = Column(String(1024), nullable=False)
+    mca_pid         = Column(String(1024), nullable=True)
     title           = Column(Text, nullable=False)                          # song name
     type_id         = Column(SmallInteger, ForeignKey("work_type_lookup.id"), nullable=True)
     iswc            = Column(String(15), nullable=True)                     # International Standard Musical Work Code
@@ -276,7 +276,7 @@ class Releases(Base):
     __tablename__ = "releases"
 
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid         = Column(String(1024), nullable=False)
+    mca_pid         = Column(String(1024), nullable=True)
     title           = Column(Text, nullable=False)
     type_id         = Column(SmallInteger, ForeignKey("release_type_lookup.id"), nullable=True)
     year            = Column(SmallInteger, nullable=True)

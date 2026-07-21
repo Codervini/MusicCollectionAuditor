@@ -18,6 +18,8 @@ from mca_tools.utils import generate_uuidv7
 # from schema.mca_table_stats import record_row_count
 import math
 from pprint import pprint
+from schema.models.file_universe import *
+from sqlalchemy.dialects.postgresql import insert
 # #----- Constants -----------------------------------------------------------------
 
 MACHINE_ID = machine_id()
@@ -70,7 +72,7 @@ def get_value_in_a_referenced_table_column(current_table, current_table_pk, fk_k
             .where(referenced.c[ref_pk_column] == fk_value)
         ).scalar_one_or_none()
 
-get_value_in_a_referenced_table_column("meta_processor_runs",)
+# get_value_in_a_referenced_table_column("meta_processor_runs",)
 
 def get_column_data_with_id(tablename, id, column):
      with SESSION_MANAGER() as session:
@@ -78,8 +80,20 @@ def get_column_data_with_id(tablename, id, column):
             return session.execute(command).scalar_one_or_none()
 
 a = get_fk_keys_in_table(tb.MPR.value)
-pprint(a)
+# pprint(a)
 
+
+def insert_multiple_columns_data(table, column_value: dict, conflict_columns: list[str] | None = None):
+    with SESSION_MANAGER() as session:
+        stmt = insert(table).values(**column_value)
+
+        if conflict_columns:
+            stmt = stmt.on_conflict_do_nothing(
+                index_elements=conflict_columns
+            )
+
+        session.execute(stmt)
+        session.commit()
 
 class Song:
     def __init__(self,  
