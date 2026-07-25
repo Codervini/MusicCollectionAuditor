@@ -21,9 +21,11 @@ from pprint import pprint
 from schema.models.file_universe import *
 from schema.lookup.file_universe_lookup import *
 from sqlalchemy.dialects.postgresql import insert
+from mca.core.logger import set_logger
 # #----- Constants -----------------------------------------------------------------
 
 MACHINE_ID = machine_id()
+logger =  set_logger(__name__)
 # record_row_count()
 #------------Tools-----------------------------------------------------------------------------
 
@@ -94,14 +96,14 @@ def insert_multiple_columns_data(table, column_value: dict, conflict_columns: li
             )
         else:
             stmt = stmt.on_conflict_do_nothing()
-        session.execute(stmt)
+        logger.debug(session.execute(stmt))
         session.commit()
 
 def fetch_id_by_value(table,value):
     with SESSION_MANAGER() as session:
         stmt = select(table.id).where(table.name == value)
         d = session.execute(stmt)
-        # pprint(d.scalar_one_or_none())
+        logger.debug(d)
         return d.scalar_one_or_none()
 
 # fetch_id_by_value(GenderLookup,"Mixed Group")

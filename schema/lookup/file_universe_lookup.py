@@ -5,8 +5,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
-from schema.base import Base
-
+from schema.base import Base , DB_ENGINE
+from schema.models.machines import *
 """
 music_library/lookup_schema.py
 ==============================
@@ -333,11 +333,12 @@ class CountryLookup(Base):
     __tablename__ = "country_lookup"
 
     id              = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid         = Column(String(1024), nullable=False)
+    mca_pid         = Column(String(1024), nullable=True)
     name            = Column(String(128), nullable=False, unique=True)      # full country name
+    official_name   = Column(String(512), nullable=False, unique=True) 
     alpha2          = Column(String(2), nullable=False, unique=True)        # ISO 3166-1 alpha-2
     alpha3          = Column(String(3), nullable=True, unique=True)         # ISO 3166-1 alpha-3
-    numeric_code    = Column(String(3), nullable=True)                      # UN numeric code
+    numeric_code    = Column(String(3), nullable=True)                      # ISO numeric code
     continent       = Column(String(32), nullable=True)                     # continent name
     is_active       = Column(Boolean, nullable=False, server_default=text("true"))  # false = dissolved/historical
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -406,5 +407,5 @@ class ISOLanguageLookup(Base):
         Index("ix_iso_language_lookup_iso_639_2", "iso_639_2"),
     )
 
-
-# Base.metadata.create_all(DB_ENGINE)
+# Base.metadata.drop_all(DB_ENGINE,[CountryLookup.__table__])
+# Base.metadata.create_all(DB_ENGINE,[CountryLookup.__table__])

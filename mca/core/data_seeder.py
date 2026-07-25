@@ -63,27 +63,41 @@ def api_request_handler(api,header = None):
         case None:
             response = requests.get(api)
         case header:
-            response = requests.get(api,header)
+            response = requests.get(api,headers=header)
 
     logger.debug("API response: %s", response)
     if response.status_code == 200:
         data = response.json()
         logger.debug("Response data: %s", data)
-        pprint(data)
+        # pprint(data)
         return data
     
 def mb_artist_props_feeder(mbid):
     api = "https://musicbrainz.org/ws/2/artist/5b6ebfe0-f72b-4902-bba9-74c8af0f1af0?fmt=json&inc=aliases"
     data = api_request_handler(api)
-    pprint(data)
     columns_data =  {"isni":data.get("isnis"[0], ""),   "sort_name":data.get("sort-name", ""),
-                        "born_or_formed": data.get("life-span"["begin"], ""), "died_or_disbanded": data.get("life-span"["end"], ""),
+                        "born_or_formed": data.get("life-span", "")["begin"], "died_or_disbanded": data.get("life-span", "")["end"],
                         "gender_id": data.get("gender", "")}
     insert_multiple_columns_data(Artists,columns_data)
 
-def feed_country_lookup():
-    api = "https://api.restcountries.com/countries/v5?limit=1&response_fields=names,codes,region,subregion,continents&response_fields_omit=names.translations"
-    data = api_request_handler(api,{'Authorization': f'Bearer {CONFIG_CONSTANTS["REST_COUNTRIES_API_KEY"]}'})
+def feed_country_lookup_restcountries():
+    # 254 Countries
+    offset = [0,100,200]
+    limit = [100,100,54]
+    for i in range(0, len(offset)):
+        api = f"https://api.restcountries.com/countries/v5?limit={limit[i]}&offset={offset[i]}&response_fields=names,codes,region,subregion,continents&response_fields_omit=names.translations"
+        data = api_request_handler(api,{'Authorization': f'Bearer {CONFIG_CONSTANTS["REST_COUNTRIES_API_KEY"]}'})
+        for i in range(0,data["data"]["meta"]["count"]):
+            columns_data =  {"name":data["data"]["objects"][i]["names"]["common"],
+                            "official_name": data["data"]["objects"][i]["names"]["official"],
+                            "alpha2":data["data"]["objects"][i]["codes"]["alpha_2"],
+                            "alpha3": data["data"]["objects"][i]["codes"]["alpha_3"],
+                            "numeric_code":data["data"]["objects"][i]["codes"]["ccn3"],
+                            "continent":", ".join(data["data"]["objects"][i]["continents"])
+                            }
+            insert_multiple_columns_data(CountryLookup,columns_data)
+
 # feed_artists(50)
 # mb_artist_feeder("5b6ebfe0-f72b-4902-bba9-74c8af0f1af0")
 # pprint(discover_artists_lastfm(969))
+#feed_country_lookup_restcountries()
