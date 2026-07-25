@@ -58,9 +58,32 @@ def feed_artists(limit):
         for name,v in artist_list_2.items():
             insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
             
-        
+def api_request_handler(api,header = None):
+    match header:
+        case None:
+            response = requests.get(api)
+        case header:
+            response = requests.get(api,header)
 
-        
-feed_artists(50)
+    logger.debug("API response: %s", response)
+    if response.status_code == 200:
+        data = response.json()
+        logger.debug("Response data: %s", data)
+        pprint(data)
+        return data
+    
+def mb_artist_props_feeder(mbid):
+    api = "https://musicbrainz.org/ws/2/artist/5b6ebfe0-f72b-4902-bba9-74c8af0f1af0?fmt=json&inc=aliases"
+    data = api_request_handler(api)
+    pprint(data)
+    columns_data =  {"isni":data.get("isnis"[0], ""),   "sort_name":data.get("sort-name", ""),
+                        "born_or_formed": data.get("life-span"["begin"], ""), "died_or_disbanded": data.get("life-span"["end"], ""),
+                        "gender_id": data.get("gender", "")}
+    insert_multiple_columns_data(Artists,columns_data)
 
-pprint(discover_artists_lastfm(969))
+def feed_country_lookup():
+    api = "https://api.restcountries.com/countries/v5?limit=1&response_fields=names,codes,region,subregion,continents&response_fields_omit=names.translations"
+    data = api_request_handler(api,{'Authorization': f'Bearer {CONFIG_CONSTANTS["REST_COUNTRIES_API_KEY"]}'})
+# feed_artists(50)
+# mb_artist_feeder("5b6ebfe0-f72b-4902-bba9-74c8af0f1af0")
+# pprint(discover_artists_lastfm(969))
