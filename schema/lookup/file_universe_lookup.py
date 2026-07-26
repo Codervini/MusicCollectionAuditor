@@ -35,7 +35,7 @@ class ArtistTypeLookup(Base):
     __tablename__ = "artist_type_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -52,7 +52,7 @@ class GenderLookup(Base):
     __tablename__ = "gender_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -68,7 +68,7 @@ class WorkTypeLookup(Base):
     __tablename__ = "work_type_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -85,7 +85,7 @@ class VersionTypeLookup(Base):
     __tablename__ = "version_type_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -102,7 +102,7 @@ class ReleaseTypeLookup(Base):
     __tablename__ = "release_type_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -124,7 +124,7 @@ class FileFormatLookup(Base):
     __tablename__ = "file_format_lookup"
 
     id                  = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid             = Column(String(256), nullable=False)
+    mca_pid             = Column(String(256), nullable=True)
 
     # Identity
     name                = Column(String(16), nullable=False, unique=True)   # e.g. mp3, flac, opus
@@ -180,7 +180,7 @@ class QualityTierLookup(Base):
     __tablename__ = "quality_tier_lookup"
 
     id              = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid         = Column(String(256), nullable=False)
+    mca_pid         = Column(String(256), nullable=True)
     name            = Column(String(64), nullable=False, unique=True)       # e.g. hi_res, lossless
     label           = Column(String(64), nullable=False)                    # e.g. "Hi-Res", "Lossless (CD)"
     description     = Column(Text, nullable=True)
@@ -198,7 +198,7 @@ class TagSourceLookup(Base):
     __tablename__ = "tag_source_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -218,7 +218,7 @@ class TagLookup(Base):
     __tablename__ = "tag_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)           # the tag e.g. "rock"
     description = Column(Text, nullable=True)
     source_id   = Column(SmallInteger, ForeignKey("tag_source_lookup.id"), nullable=True)
@@ -240,7 +240,7 @@ class EntityTypeLookup(Base):
     __tablename__ = "entity_type_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     table_name  = Column(String(64), nullable=False)                        # actual db table name
     description = Column(Text, nullable=True)
@@ -257,7 +257,7 @@ class AliasTypeLookup(Base):
     __tablename__ = "alias_types_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -275,7 +275,7 @@ class LinkTypeLookup(Base):
     __tablename__ = "link_types_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     base_url    = Column(Text, nullable=True)                               # e.g. https://open.spotify.com/artist/
     description = Column(Text, nullable=True)
@@ -294,7 +294,7 @@ class ArtistRolesLookup(Base):
     __tablename__ = "artist_roles_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -311,7 +311,7 @@ class CreditSourceLookup(Base):
     __tablename__ = "credit_source_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=False)
+    mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     source_url  = Column(Text, nullable=True)                               # base URL of the source platform
     description = Column(Text, nullable=True)
@@ -364,7 +364,7 @@ class LocaleLookup(Base):
     __tablename__ = "locale_lookup"
 
     id              = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid         = Column(String(1024), nullable=False)
+    mca_pid         = Column(String(1024), nullable=True)
     code            = Column(String(16), nullable=False, unique=True)       # full locale e.g. en_US
     language_code   = Column(String(8), nullable=False)                     # ISO 639-1 e.g. en
     region_code     = Column(String(4), nullable=True)                      # ISO 3166-1 alpha-2 e.g. US
@@ -392,7 +392,7 @@ class ISOLanguageLookup(Base):
     __tablename__ = "iso_language_lookup"
 
     id              = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid         = Column(String(1024), nullable=False)
+    mca_pid         = Column(String(1024), nullable=True)
     name            = Column(String(128), nullable=False, unique=True)      # English name of language
     iso_639_1       = Column(String(2), nullable=True, unique=True)         # 2-letter (may be null for rare langs)
     iso_639_2       = Column(String(3), nullable=True)                      # 3-letter bibliographic

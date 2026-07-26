@@ -99,14 +99,14 @@ def insert_multiple_columns_data(table, column_value: dict, conflict_columns: li
         logger.debug(session.execute(stmt))
         session.commit()
 
-def fetch_id_by_value(table,value):
+def fetch_id_by_value(table,identifying_column,value):
     with SESSION_MANAGER() as session:
-        stmt = select(table.id).where(table.name == value)
+        stmt = select(table.id).where(table.identifying_column == value)
         d = session.execute(stmt)
-        logger.debug(d)
+        logger.debug(d.scalar_one_or_none)
         return d.scalar_one_or_none()
 
-# fetch_id_by_value(GenderLookup,"Mixed Group")
+# print(fetch_id_by_value(GenderLookup,"Mixe Group"))
 class Song:
     def __init__(self,  
                 file_path:str, 

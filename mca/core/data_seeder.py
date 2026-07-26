@@ -2,7 +2,7 @@ import requests
 from dotenv import dotenv_values
 from pathlib import Path
 from pprint import pprint
-from mca.core.db_butler import insert_multiple_columns_data
+from mca.core.db_butler import insert_multiple_columns_data , fetch_id_by_value
 from schema.models.file_universe import Artists
 from schema.lookup.file_universe_lookup import *
 from mca.core.logger import set_logger
@@ -21,7 +21,6 @@ def discover_artists_lastfm(limit:int = 50):
         data = response.json()
         logger.debug("Response dal data: %s", data)
         for i in data["artists"]["artist"]:
-            # pprint(f"{i.get("name",None)} + {i.get("mbid",None)}")
             name =i.get("name","")
             dictt[name] = i.get("mbid","")
         return dictt
@@ -29,13 +28,11 @@ def discover_artists_lastfm(limit:int = 50):
 def discover_similar_artists_lastfm(artist,mbid = "",limit:int = 50):
     api = f"http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=cher&api_key={lastfm_api_key}&format=json&limit={limit}&artist={artist}&mbid={mbid}"
     respone = requests.get(api)
-    # pprint(respone)
     logger.debug("Artist dsa: %s", artist)
     logger.debug("API dsa response: %s", respone)
     data = {}
     if respone.status_code == 200:
         res = respone.json()
-        # pprint(res)
         logger.debug("Response dsa data: %s", res)
         with open(file=Path("data","log","sussy.csv"), mode="a") as f:
             writer = csv.writer(f)
@@ -49,14 +46,17 @@ def discover_similar_artists_lastfm(artist,mbid = "",limit:int = 50):
     
 
 
-def feed_artists(limit):
+def feed_artists_name_and_mbid(limit):
     artist_list1 = discover_artists_lastfm(limit=969)
-    # pprint(artist_list1)
-    for name,mbid in artist_list1.items():
-        insert_multiple_columns_data(Artists,{"name":name,"mbid":mbid})
-        artist_list_2 = discover_similar_artists_lastfm(name,mbid,limit)
-        for name,v in artist_list_2.items():
-            insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
+    with open(Path("data","crucialdata","artists_tb.csv"),"a") as f:
+        writer = csv.writer(f)
+        for name,mbid in artist_list1.items():
+            writer.writerow([name,mbid])    #Save to CSV
+            insert_multiple_columns_data(Artists,{"name":name,"mbid":mbid})
+            artist_list_2 = discover_similar_artists_lastfm(name,mbid,limit)
+            for name,v in artist_list_2.items():
+                writer.writerow([name,v[0]]) #Save to CSV
+                insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
             
 def api_request_handler(api,header = None):
     match header:
@@ -76,8 +76,11 @@ def mb_artist_props_feeder(mbid):
     api = "https://musicbrainz.org/ws/2/artist/5b6ebfe0-f72b-4902-bba9-74c8af0f1af0?fmt=json&inc=aliases"
     data = api_request_handler(api)
     columns_data =  {"isni":data.get("isnis"[0], ""),   "sort_name":data.get("sort-name", ""),
-                        "born_or_formed": data.get("life-span", "")["begin"], "died_or_disbanded": data.get("life-span", "")["end"],
-                        "gender_id": data.get("gender", "")}
+                        "born_or_formed": data.get("life-span", "")["begin"],
+                        "died_or_disbanded": data.get("life-span", "")["end"],
+                        "gender_id": fetch_id_by_value(GenderLookup,"name", data.get("gender", "")),
+                        "country_id": fetch_id_by_value(CountryLookup, "alpha2", data.get("country", "")),
+                        "disambiguation": data.get("disambiguation", "")}
     insert_multiple_columns_data(Artists,columns_data)
 
 def feed_country_lookup_restcountries():
