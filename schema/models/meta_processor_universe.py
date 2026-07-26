@@ -26,7 +26,7 @@ class MetaProcessorRuns(Base):
     __tablename__ = "meta_processor_runs"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     # file_universe_id        = Column(UUID(as_uuid=True), ForeignKey("file_universe.id"), nullable=False)
     song_library_id         = Column(UUID(as_uuid=True), nullable=True)           # filled when promoted
 
@@ -81,7 +81,7 @@ class MetaProcessorReprocessLog(Base):
     __tablename__ = "meta_processor_reprocess_log"
 
     id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid             = Column(String(1024), nullable=False, unique=True)
+    mca_pid             = Column(String(1024), nullable=True, unique=True)
     new_run_id          = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     previous_run_id     = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     reason              = Column(SmallInteger, ForeignKey("reprocess_reason_lookup.id"), nullable=False)
@@ -105,7 +105,7 @@ class RunStageLog(Base):
     __tablename__ = "run_stage_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     stage                   = Column(SmallInteger, ForeignKey("pipeline_stage_lookup.id"), nullable=False)
     started_at              = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -127,7 +127,7 @@ class RunPhaseLog(Base):
     __tablename__ = "run_phase_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     stage_log_id            = Column(UUID(as_uuid=True), ForeignKey("run_stage_log.id"), nullable=False)
     phase                   = Column(SmallInteger, ForeignKey("pipeline_phase_lookup.id"), nullable=False)
@@ -148,7 +148,7 @@ class RunStepLog(Base):
     __tablename__ = "run_step_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     phase_log_id            = Column(UUID(as_uuid=True), ForeignKey("run_phase_log.id"), nullable=False)
     step                    = Column(SmallInteger, ForeignKey("pipeline_step_lookup.id"), nullable=False)
@@ -174,7 +174,7 @@ class RunDecisionLog(Base):
     __tablename__ = "run_decision_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     step_log_id             = Column(UUID(as_uuid=True), ForeignKey("run_step_log.id"), nullable=True)
     decision_type           = Column(SmallInteger, ForeignKey("pipeline_decision_type_lookup.id"), nullable=False)
@@ -204,7 +204,7 @@ class FileIngestLog(Base):
     __tablename__ = "file_ingest_log"
 
     id                              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                         = Column(String(1024), nullable=False, unique=True)
+    mca_pid                         = Column(String(1024), nullable=True, unique=True)
     run_id                          = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False, unique=True)
     ingested_at                     = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     machine_id                      = Column(String(64), ForeignKey("machines.id"), nullable=False)
@@ -276,7 +276,7 @@ class FileQualityCheckLog(Base):
     __tablename__ = "file_quality_check_log"
 
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid         = Column(String(1024), nullable=False, unique=True)
+    mca_pid         = Column(String(1024), nullable=True, unique=True)
     run_id          = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     ingest_id       = Column(UUID(as_uuid=True), ForeignKey("file_ingest_log.id"), nullable=False)
     flag            = Column(SmallInteger, ForeignKey("file_quality_flag_lookup.id"), nullable=False)
@@ -305,7 +305,7 @@ class MBIDValidationLog(Base):
     __tablename__ = "mbid_validation_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     mbid                    = Column(String(36), nullable=False)
     mbid_type               = Column(UUID(as_uuid=True), nullable=False)                # track or album
@@ -337,7 +337,7 @@ class MetadataFetchLog(Base):
     __tablename__ = "metadata_fetch_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     service                 = Column(SmallInteger, ForeignKey("service_lookup.id"), nullable=False)
     call_order              = Column(SmallInteger, nullable=False)               # position in the chain
@@ -369,7 +369,7 @@ class MetadataFetchFields(Base):
     __tablename__ = "metadata_fetch_fields"
 
     id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid             = Column(String(1024), nullable=False, unique=True)
+    mca_pid             = Column(String(1024), nullable=True, unique=True)
     run_id              = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     fetch_log_id        = Column(UUID(as_uuid=True), ForeignKey("metadata_fetch_log.id"), nullable=False)
     service             = Column(SmallInteger, ForeignKey("service_lookup.id"), nullable=False)
@@ -404,7 +404,7 @@ class ResolvedMetadata(Base):
     __tablename__ = "resolved_metadata"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False, unique=True)
     created_at              = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at              = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
@@ -446,7 +446,7 @@ class ResolvedMetadataExtended(Base):
     __tablename__ = "resolved_metadata_extended"
 
     id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid             = Column(String(1024), nullable=False, unique=True)
+    mca_pid             = Column(String(1024), nullable=True, unique=True)
     run_id              = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     resolved_id         = Column(UUID(as_uuid=True), ForeignKey("resolved_metadata.id"), nullable=False)
     field               = Column(SmallInteger, ForeignKey("metadata_field_lookup.id"), nullable=False)
@@ -475,7 +475,7 @@ class ResolvedMetadataSources(Base):
     __tablename__ = "resolved_metadata_sources"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     field                   = Column(SmallInteger, ForeignKey("metadata_field_lookup.id"), nullable=False)
     winning_service         = Column(SmallInteger, ForeignKey("service_lookup.id"), nullable=True)
@@ -511,7 +511,7 @@ class ArtworkFetchLog(Base):
     __tablename__ = "artwork_fetch_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     service                 = Column(SmallInteger, ForeignKey("artwork_source_lookup.id"), nullable=False)
     call_order              = Column(SmallInteger, nullable=False)
@@ -544,7 +544,7 @@ class ArtworkSelectionLog(Base):
     __tablename__ = "artwork_selection_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False, unique=True)
     selected_fetch_id       = Column(UUID(as_uuid=True), ForeignKey("artwork_fetch_log.id"), nullable=True)
     # selected_by_user_id     = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
@@ -571,7 +571,7 @@ class FileSaveLog(Base):
     __tablename__ = "file_save_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     save_type               = Column(SmallInteger, ForeignKey("save_type_lookup.id"), nullable=False)
     # initiated_by_user_id    = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
@@ -599,7 +599,7 @@ class FileSaveFieldLog(Base):
     __tablename__ = "file_save_field_log"
 
     id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid             = Column(String(1024), nullable=False, unique=True)
+    mca_pid             = Column(String(1024), nullable=True, unique=True)
     save_log_id         = Column(UUID(as_uuid=True), ForeignKey("file_save_log.id"), nullable=False)
     run_id              = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     field               = Column(SmallInteger, ForeignKey("metadata_field_lookup.id"), nullable=False)
@@ -629,7 +629,7 @@ class PicardSessionLog(Base):
     __tablename__ = "picard_session_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     # user_id                 = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     machine_id              = Column(String(64), ForeignKey("machines.id"), nullable=False)
@@ -674,7 +674,7 @@ class UserConsentLog(Base):
     __tablename__ = "user_consent_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     consent_type            = Column(SmallInteger, ForeignKey("consent_type_lookup.id"), nullable=False)
     service                 = Column(SmallInteger, ForeignKey("service_lookup.id"), nullable=True)    # if service_call type
@@ -706,7 +706,7 @@ class ManualReviewLog(Base):
     __tablename__ = "manual_review_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     reasons                 = Column(ARRAY(Text), nullable=False)               # array of manual_review_reason_lookup ids
     triggered_at_stage      = Column(SmallInteger, ForeignKey("pipeline_stage_lookup.id"), nullable=False)
@@ -741,7 +741,7 @@ class ManualReviewFieldLog(Base):
     __tablename__ = "manual_review_field_log"
 
     id                      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid                 = Column(String(1024), nullable=False, unique=True)
+    mca_pid                 = Column(String(1024), nullable=True, unique=True)
     review_id               = Column(UUID(as_uuid=True), ForeignKey("manual_review_log.id"), nullable=False)
     run_id                  = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     field                   = Column(SmallInteger, ForeignKey("metadata_field_lookup.id"), nullable=False)
@@ -775,7 +775,7 @@ class RunErrorLog(Base):
     __tablename__ = "run_error_log"
 
     id                  = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
-    mca_pid             = Column(String(1024), nullable=False, unique=True)
+    mca_pid             = Column(String(1024), nullable=True, unique=True)
     run_id              = Column(UUID(as_uuid=True), ForeignKey("meta_processor_runs.id"), nullable=False)
     machine_id          = Column(String(64), ForeignKey("machines.id"), nullable=False)
     # session_id          = Column(UUID(as_uuid=True), ForeignKey("user_sessions.id"), nullable=True)

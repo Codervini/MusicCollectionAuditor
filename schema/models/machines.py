@@ -11,4 +11,4 @@ class Machines(Base):
     
     id = Column(String(64), primary_key=True)
     uuid = Column(UUID(as_uuid=True), unique=True, server_default=text("uuidv7()"))
-    mca_pid = Column(String(1024), unique=True, nullable=False)
+    mca_pid = Column(String(1024), unique=True, nullable=True)
