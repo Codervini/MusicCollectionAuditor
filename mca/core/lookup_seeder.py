@@ -29,3 +29,50 @@ def seed_country_lookup_restcountries():
                             "continent":", ".join(data["data"]["objects"][i]["continents"])
                             }
             insert_multiple_columns_data(CountryLookup,columns_data)
+
+def seed_gender_lookup():
+    genders = [
+    ("Male",                "Identifies as male"),
+    ("Female",              "Identifies as female"),
+    ("Trans Male",          "Identifies as trans male"),
+    ("Trans Female",        "Identifies as trans female"),
+    ("Non-binary",          "Identifies outside the male/female binary"),
+    ("Genderqueer",         "Identifies as genderqueer or gender non-conforming"),
+    ("Genderfluid",         "Gender identity that shifts over time"),
+    ("Agender",             "Identifies as having no gender"),
+    ("Bigender",            "Identifies as two genders"),
+    ("Androgyne",           "Identifies as androgynous or between genders"),
+    ("Two-Spirit",          "Indigenous North American third-gender identity"),
+    ("Intersex",            "Born with variations in sex characteristics"),
+    ("Boy Group",           "All-male musical group"),
+    ("Girl Group",          "All-female musical group"),
+    ("Mixed Group",         "Mixed-gender musical group"),
+    ("Trans Male Group",    "Group identifying as trans male"),
+    ("Trans Female Group",  "Group identifying as trans female"),
+    ("Mixed Trans Group",   "Group with mixed trans gender identities"),
+    ("Not Applicable",      "Entity for which gender is not applicable"),
+    ("Unknown",             "Gender not known or not recorded"),
+    ("Prefer Not to Say",   "Gender withheld by choice"),
+    ]
+    for i in genders:
+        insert_multiple_columns_data(GenderLookup,{"name":i[0],"description":i[1]})
+    logger.debug("Gender Lookup Seeded")
+
+def seed_artist_type_lookup():
+    artist_types = [
+    ("Person",      "A single individual artist"),
+    ("Group",       "A band, ensemble, or musical group"),
+    ("Choir",       "A vocal ensemble or chorus"),
+    ("Orchestra",   "A large classical or symphonic ensemble"),
+    ("Character",   "A fictional or animated character"),
+    ("Other",       "An artist type that does not fit standard categories"),
+    ("Unknown",     "Artist type not known or not recorded"),
+    ]
+    for i in artist_types:
+        insert_multiple_columns_data(ArtistTypeLookup,{"name":i[0],"description":i[1]})
+    logger.debug("Artist Type Lookup Seeded")
+
+
+seed_artist_type_lookup()
+seed_gender_lookup()
+seed_country_lookup_restcountries()

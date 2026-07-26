@@ -2,11 +2,11 @@ import requests
 from dotenv import dotenv_values
 from pathlib import Path
 from pprint import pprint
-from mca.core.db_butler import insert_multiple_columns_data , fetch_id_by_value
+from mca.core.db_butler import insert_multiple_columns_data , fetch_id_by_value , get_all_values_of_a_column_in_tb ,update_multiple_columns_data
 from schema.models.file_universe import Artists
 from schema.lookup.file_universe_lookup import *
 from mca.core.logger import set_logger
-from mca_tools.utils import api_request_handler
+from mca_tools.utils import api_request_handler, coerce_to_date
 import csv
 from datetime import date
 CONFIG_CONSTANTS = dotenv_values(Path("config",".env"))
@@ -49,7 +49,7 @@ def discover_similar_artists_lastfm(artist,mbid = "",limit:int = 50):
 
 def seed_artist_name_and_mbid(artist_limit, similar_artist_limit):
     artist_list1 = discover_artists_lastfm(limit=artist_limit)
-    with open(Path("data","crucialdata","artists_tb.csv"),"a") as f:
+    with open(Path("data","crucialdata",f"artists_tb {date.today()}.csv"),"a") as f:
         writer = csv.writer(f)
         for name,mbid in artist_list1.items():
             writer.writerow([name,mbid])    #Save to CSV
@@ -59,18 +59,34 @@ def seed_artist_name_and_mbid(artist_limit, similar_artist_limit):
                 writer.writerow([name,v[0]]) #Save to CSV
                 insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
             
-def seed_artist_props_musicbrainz(mbid):
-    api = "https://musicbrainz.org/ws/2/artist/5b6ebfe0-f72b-4902-bba9-74c8af0f1af0?fmt=json&inc=aliases"
-    data = api_request_handler(api)
-    columns_data =  {"isni":data.get("isnis"[0], ""),   "sort_name":data.get("sort-name", ""),
-                        "born_or_formed": data.get("life-span", "")["begin"],
-                        "died_or_disbanded": data.get("life-span", "")["end"],
-                        "gender_id": fetch_id_by_value(GenderLookup,"name", data.get("gender", "")),
-                        "country_id": fetch_id_by_value(CountryLookup, "alpha2", data.get("country", "")),
-                        "disambiguation": data.get("disambiguation", "")}
-    insert_multiple_columns_data(Artists,columns_data)
+def seed_artist_props_musicbrainz():
+    mbids = get_all_values_of_a_column_in_tb(Artists,"mbid")
+    header = {"User-Agent": f"{CONFIG_CONSTANTS["APP_NAME"]}/{CONFIG_CONSTANTS["VERSION"]} ( {CONFIG_CONSTANTS["CONTACT_EMAIL"]} )"}
+    try: 
+        with open(Path("data","crucialdata",f"artists_props_tb {date.today()}.csv"),"a") as f:
+            writer = csv.writer(f)
+            for i in mbids:
+                api = f"https://musicbrainz.org/ws/2/artist/{i}?fmt=json&inc=aliases"
+                data = api_request_handler(api, header)
+                # pprint(data)
+                if data != None:
+                    columns_data =  {"isni": (data["isnis"][0] if len(data["isnis"]) > 0 else ""),
+                                        "sort_name":data.get("sort-name", ""),
+                                        "born_or_formed": coerce_to_date(data["life-span"]["begin"]),
+                                        "died_or_disbanded": coerce_to_date(data["life-span"].get("end", None)),
+                                        "gender_id": fetch_id_by_value(GenderLookup,"name", data.get("gender", "Unknown")),
+                                        "country_id": fetch_id_by_value(CountryLookup, "alpha2", data.get("country", "Unknown")),
+                                        "disambiguation": data.get("disambiguation", ""),
+                                        "raw_mb_response": data}
+                    writer.writerow(columns_data.items())
+                    update_multiple_columns_data(Artists,"mbid",i,columns_data)
+                else:
+                    logger.warning("No results from MB for %s",i)
+        logger.info("%d artist properties inserted succesfully",len(mbids))
+    except Exception as e:
+        logger.critical("Something went wrong!: %d",e)
 
 
-seed_artist_name_and_mbid(969,100)
-# mb_artist_feeder("5b6ebfe0-f72b-4902-bba9-74c8af0f1af0")
+
+seed_artist_props_musicbrainz()
 # pprint(discover_artists_lastfm(969))

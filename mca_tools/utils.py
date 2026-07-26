@@ -1,6 +1,7 @@
 from uuid_extensions import uuid7, uuid7str
 import requests
 from mca.core.logger import set_logger
+from datetime import date
 logger = set_logger(__name__)
 
 
@@ -20,3 +21,15 @@ def api_request_handler(api,header = None):
         logger.debug("Response data: %s", data)
         # pprint(data)
         return data
+
+def coerce_to_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    value = value.strip()
+    try:
+        if len(value) == 10:  # full date "2019-06-15"
+            return date.fromisoformat(value)
+        else:  # anything else — year only, year-month, whatever
+            return date(int(value[:4]), 1, 1)
+    except (ValueError, TypeError):
+        return None

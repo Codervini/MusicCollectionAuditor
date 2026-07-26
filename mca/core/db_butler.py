@@ -2,7 +2,7 @@ import dotenv
 from sqlalchemy import (
     Column, Text, Boolean, SmallInteger, Numeric,
     String, TIMESTAMP, ARRAY, Index, text, create_engine, Enum,
-    UniqueConstraint, ForeignKey, select , event, inspect, MetaData , Table
+    UniqueConstraint, ForeignKey, select , event, inspect, MetaData , Table, update
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import declarative_base, sessionmaker, base
@@ -101,11 +101,27 @@ def insert_multiple_columns_data(table, column_value: dict, conflict_columns: li
 
 def fetch_id_by_value(table,identifying_column,value):
     with SESSION_MANAGER() as session:
-        stmt = select(table.id).where(table.identifying_column == value)
-        d = session.execute(stmt)
-        logger.debug(d.scalar_one_or_none)
-        return d.scalar_one_or_none()
+        stmt = select(table.id).where(getattr(table, identifying_column) == value)
+        result = session.execute(stmt)
+        data = result.scalar_one_or_none()
+        logger.debug(data)
+        return data
 
+def get_all_values_of_a_column_in_tb(table,column):
+    with SESSION_MANAGER() as session:
+        stmt = select(getattr(table,column))
+        result = session.execute(stmt)
+        data = result.scalars().all()
+        logger.debug(data)
+        return data
+def update_multiple_columns_data(table,id_column,id_value,column_value: dict):
+    with SESSION_MANAGER() as session:
+        stmt = update(table).where(getattr(table,id_column) == id_value).values(**column_value)
+        result = session.execute(stmt)
+        # data = result.scalar_one_or_none()
+        logger.debug(result)
+        session.commit()
+# pprint(get_all_values_of_a_column_in_tb(Artists,"mbid"))
 # print(fetch_id_by_value(GenderLookup,"Mixe Group"))
 class Song:
     def __init__(self,  
