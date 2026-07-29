@@ -107,9 +107,9 @@ def fetch_id_by_value(table,identifying_column,value):
         logger.debug(data)
         return data
 
-def get_all_values_of_a_column_in_tb(table,column):
+def get_all_values_of_a_column_in_tb(table,column,sort_column_asc = None):
     with SESSION_MANAGER() as session:
-        stmt = select(getattr(table,column))
+        stmt = select(getattr(table,column)).order_by(getattr(table,sort_column_asc)) if sort_column_asc else select(getattr(table,column))
         result = session.execute(stmt)
         data = result.scalars().all()
         logger.debug(data)
