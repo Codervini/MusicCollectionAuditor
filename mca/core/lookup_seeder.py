@@ -72,6 +72,23 @@ def seed_artist_type_lookup():
         insert_multiple_columns_data(ArtistTypeLookup,{"name":i[0],"description":i[1]})
     logger.debug("Artist Type Lookup Seeded")
 
+def seed_alias_types_lookup():
+    link_types = alias_types = [
+    ("Artist Name",       "An alternative name the artist performs or is known under"),
+    ("Legal Name",        "The official birth or legal name, e.g. Stefani Germanotta → Lady Gaga"),
+    ("Search Hint",       "A misspelling or common variation to aid search, e.g. Led Zepplin"),
+    ("Stage Name",        "A performance name adopted for public use, distinct from legal name"),
+    ("Nickname",          "An informal name given by fans, peers or media, e.g. The Boss, The King"),
+    ("Alter Ego",         "A distinct persona adopted for a specific creative project, e.g. Ziggy Stardust"),
+    ("Abbreviation",      "A shortened form of the artist name, e.g. JT for Justin Timberlake"),
+    ("Transliteration",   "A phonetic rendering into another script, e.g. Чайковский → Tchaikovsky"),
+    ("Translation",       "A meaning-based rendering into another language"),
+    ("Contractual Alias", "A name used to bypass label or contractual restrictions"),
+    ("Collaboration Name","A name used specifically for a joint project or group effort"),
+    ("Birth Name",        "The name given at birth, before any legal or stage name change"),
+    ("Collective Name",   "A shared name used by a group or rotating set of artists as one identity"),
+    ("Unspecified",       "Alias type not yet determined — assign a specific type after research"),
+]
 
 seed_artist_type_lookup()
 seed_gender_lookup()
