@@ -10,6 +10,8 @@ from mca_tools.utils import api_request_handler, coerce_to_date
 import csv
 from datetime import date
 import time
+import json
+import ast
 CONFIG_CONSTANTS = dotenv_values(Path("config",".env"))
 logger = set_logger(__name__)
 lastfm_api_key = CONFIG_CONSTANTS["LASTFM_API_KEY"]
@@ -118,8 +120,25 @@ def seed_artist_props_musicbrainz(cache = True):
             data_counter += 1
     logger.info("%d artist properties inserted succesfully",len(mbids))
     
+def seed_artist_aliases():
+    ids = get_all_values_of_a_column_in_tb(Artists,"id","created_at")
+    with open(Path("data","crucialdata",f"artists_props_tb.csv"),"r") as f:
+        reader = csv.reader(f)
+        id_aliases_data = {i[0]:ast.literal_eval(i[-1]).get("aliases",[]) for i in list(reader)}
 
+    for artist, aliases in id_aliases_data.items():
+        if len(aliases) > 0:
+            for alias in aliases:
+                data = {"artist_id":fetch_id_by_value(Artists,"mbid",artist),
+                        "alias_type_id": fetch_id_by_value(AliasTypeLookup,"id",alias.get("type","Unspecified")),
+                        "name":alias.get("name","Unknown"),
+                        "sort_name":alias.get("sort-name","Unknown"),
+                        "locale_id": fetch_id_by_value(LocaleLookup,"id",alias.get("locale",None)),
+                        "is_primary": alias.get("primary",None)
+                        }
+                pprint(data)
+                time.sleep(2)
 
-
-seed_artist_props_musicbrainz()
+seed_artist_aliases()
+# seed_artist_props_musicbrainz()
 # pprint(discover_artists_lastfm(969))

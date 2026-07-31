@@ -7,6 +7,9 @@ from schema.lookup.file_universe_lookup import *
 from mca.core.logger import set_logger
 from mca_tools.utils import api_request_handler
 import csv
+from babel import Locale
+from babel.core import getlocale_identifiers, UnknownLocaleError
+
 CONFIG_CONSTANTS = dotenv_values(Path("config",".env"))
 logger = set_logger(__name__)
 lastfm_api_key = CONFIG_CONSTANTS["LASTFM_API_KEY"]
@@ -73,7 +76,7 @@ def seed_artist_type_lookup():
     logger.debug("Artist Type Lookup Seeded")
 
 def seed_alias_types_lookup():
-    link_types = alias_types = [
+    alias_types = [
     ("Artist Name",       "An alternative name the artist performs or is known under"),
     ("Legal Name",        "The official birth or legal name, e.g. Stefani Germanotta → Lady Gaga"),
     ("Search Hint",       "A misspelling or common variation to aid search, e.g. Led Zepplin"),
@@ -88,8 +91,33 @@ def seed_alias_types_lookup():
     ("Birth Name",        "The name given at birth, before any legal or stage name change"),
     ("Collective Name",   "A shared name used by a group or rotating set of artists as one identity"),
     ("Unspecified",       "Alias type not yet determined — assign a specific type after research"),
-]
+    ]
+    for i in alias_types:
+            insert_multiple_columns_data(AliasTypeLookup,{"name":i[0],"description":i[1]})
+    logger.info("Alias Type Lookup Seeded")
+
+
+def seed_locale_lookup():
+    rtl_scripts = {"Arab", "Hebr", "Thaa", "Tfng", "Syrc", "Nkoo", "Adlm"}
+    for locale_str in locale_identifiers():
+        try:
+            loc = Locale.parse(locale_str, sep="_")
+            script  = str(loc.script)    if loc.script    else None
+            region  = str(loc.territory) if loc.territory else None
+            insert_multiple_columns_data(LocaleLookup,{
+                "code":          locale_str,
+                "language_code": str(loc.language),
+                "region_code":   region,
+                "script_code":   script,
+                "display_name":  loc.get_display_name("en"),
+                "is_rtl":        script in rtl_scripts if script else False,
+            })
+        except UnknownLocaleError:
+            continue
+    logger.info("Locale Lookup Seeded")
 
 seed_artist_type_lookup()
-seed_gender_lookup()
-seed_country_lookup_restcountries()
+seed_alias_types_lookup()
+seed_locale_lookup()
+# seed_gender_lookup()
+# seed_country_lookup_restcountries()
