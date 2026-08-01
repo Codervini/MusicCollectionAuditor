@@ -7,8 +7,9 @@ from schema.lookup.file_universe_lookup import *
 from mca.core.logger import set_logger
 from mca_tools.utils import api_request_handler
 import csv
-from babel import Locale
-from babel.core import getlocale_identifiers, UnknownLocaleError
+from babel.localedata import locale_identifiers
+from babel.core import Locale, UnknownLocaleError
+
 
 CONFIG_CONSTANTS = dotenv_values(Path("config",".env"))
 logger = set_logger(__name__)

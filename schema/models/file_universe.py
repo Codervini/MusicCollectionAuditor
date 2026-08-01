@@ -82,11 +82,11 @@ class ArtistAliases(Base):
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=True)
     artist_id       = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
-    alias_type_id   = Column(SmallInteger, ForeignKey("alias_types_lookup.id"), nullable=False)
+    alias_type_id   = Column(SmallInteger, ForeignKey("alias_types_lookup.id"), nullable=True)
     name            = Column(Text, nullable=False)                          # the alias
     sort_name       = Column(Text, nullable=True)
     locale_id       = Column(SmallInteger, ForeignKey("locale_lookup.id"), nullable=True)   # replaces raw locale string
-    is_primary      = Column(Boolean, nullable=False, server_default=text("false"))
+    is_primary      = Column(Boolean, nullable=True)
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     updated_by      = Column(String(64), ForeignKey("machines.id"), nullable=True)

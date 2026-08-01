@@ -3,7 +3,7 @@ from dotenv import dotenv_values
 from pathlib import Path
 from pprint import pprint
 from mca.core.db_butler import insert_multiple_columns_data , fetch_id_by_value , get_all_values_of_a_column_in_tb ,update_multiple_columns_data
-from schema.models.file_universe import Artists
+from schema.models.file_universe import *
 from schema.lookup.file_universe_lookup import *
 from mca.core.logger import set_logger
 from mca_tools.utils import api_request_handler, coerce_to_date
@@ -122,6 +122,8 @@ def seed_artist_props_musicbrainz(cache = True):
     
 def seed_artist_aliases():
     ids = get_all_values_of_a_column_in_tb(Artists,"id","created_at")
+    alias_count = 0
+    artist_count = 0
     with open(Path("data","crucialdata",f"artists_props_tb.csv"),"r") as f:
         reader = csv.reader(f)
         id_aliases_data = {i[0]:ast.literal_eval(i[-1]).get("aliases",[]) for i in list(reader)}
@@ -130,14 +132,23 @@ def seed_artist_aliases():
         if len(aliases) > 0:
             for alias in aliases:
                 data = {"artist_id":fetch_id_by_value(Artists,"mbid",artist),
-                        "alias_type_id": fetch_id_by_value(AliasTypeLookup,"id",alias.get("type","Unspecified")),
+                        "alias_type_id": fetch_id_by_value(AliasTypeLookup,"name",alias.get("type","Unspecified")),
                         "name":alias.get("name","Unknown"),
                         "sort_name":alias.get("sort-name","Unknown"),
-                        "locale_id": fetch_id_by_value(LocaleLookup,"id",alias.get("locale",None)),
+                        "locale_id": fetch_id_by_value(LocaleLookup,"code",alias.get("locale",None)),
                         "is_primary": alias.get("primary",None)
                         }
-                pprint(data)
-                time.sleep(2)
+                # pprint(alias)
+                # pprint(data)
+                insert_multiple_columns_data(ArtistAliases,data)
+                alias_count+=1
+                pprint(f"{alias_count}/{len(aliases)} of {artist} inserted")
+            logger.info("%d %s aliases inserted succesfully",len(alias),artist)
+            alias_count = 0
+                # time.sleep(2)
+        artist_count+=1
+        pprint(f"{artist_count}/{len(id_aliases_data)} completed")
+    logger.info("%d artist aliases inserted succesfully",len(id_aliases_data))
 
 seed_artist_aliases()
 # seed_artist_props_musicbrainz()
