@@ -117,8 +117,92 @@ def seed_locale_lookup():
             continue
     logger.info("Locale Lookup Seeded")
 
-seed_artist_type_lookup()
-seed_alias_types_lookup()
-seed_locale_lookup()
+def seed_link_types_lookup():
+    link_types = [
+
+    # Official
+    ("Official Homepage","https://","Artist's official website"),
+    ("Official Store","https://","Official merch or music store"),
+
+    # Social Networks
+    ("Facebook","https://www.facebook.com/","Facebook page or profile"),
+    ("Instagram","https://www.instagram.com/","Instagram profile"),
+    ("Twitter","https://twitter.com/","Twitter/X profile"),
+    ("TikTok","https://www.tiktok.com/@","TikTok profile"),
+    ("Myspace","https://myspace.com/","Myspace page"),
+    ("SoundCloud","https://soundcloud.com/","SoundCloud profile"),
+    ("Snapchat","https://www.snapchat.com/add/","Snapchat profile"),
+    ("Threads","https://www.threads.net/@","Threads profile"),
+    ("Bluesky","https://bsky.app/profile/","Bluesky profile"),
+    ("Mastodon","https://","Mastodon profile"),
+    ("Tumblr","https://","Tumblr blog"),
+
+    # Video
+    ("YouTube","https://www.youtube.com/","Official YouTube channel"),
+    ("YouTube Music","https://music.youtube.com/","YouTube Music channel"),
+    ("Vimeo","https://vimeo.com/","Vimeo channel"),
+
+    # Streaming
+    ("Spotify","https://open.spotify.com/artist/","Spotify artist page"),
+    ("Apple Music","https://music.apple.com/","Apple Music artist page"),
+    ("Tidal","https://tidal.com/browse/artist/","Tidal artist page"),
+    ("Deezer","https://www.deezer.com/en/artist/","Deezer artist page"),
+    ("Amazon Music","https://music.amazon.com/artists/","Amazon Music artist page"),
+    ("Pandora","https://www.pandora.com/artist/","Pandora artist page"),
+
+    # Purchase / Download
+    ("Bandcamp","https://","Bandcamp artist page"),
+    ("CD Baby","https://store.cdbaby.com/Artist/","CD Baby artist page"),
+    ("iTunes","https://music.apple.com/","iTunes artist page"),
+    ("Purchase Download","https://","Page where music can be purchased for download"),
+    ("Purchase Mail Order","https://","Page where music can be purchased by mail order"),
+    ("Free Download","https://","Page where music can be downloaded for free"),
+    ("Free Streaming","https://","Page where music can be streamed for free"),
+
+    # Databases / Reference
+    ("MusicBrainz","https://musicbrainz.org/artist/","MusicBrainz artist page"),
+    ("Discogs","https://www.discogs.com/artist/","Discogs artist page"),
+    ("Last.fm","https://www.last.fm/music/","Last.fm artist page"),
+    ("AllMusic","https://www.allmusic.com/artist/","AllMusic artist page"),
+    ("Wikidata","https://www.wikidata.org/wiki/","Wikidata entity page"),
+    ("Wikipedia","https://en.wikipedia.org/wiki/","Wikipedia article"),
+    ("IMDb","https://www.imdb.com/name/","IMDb page"),
+    ("IMSLP","https://imslp.org/wiki/","IMSLP page for classical works"),
+    ("SecondHandSongs","https://secondhandsongs.com/artist/","SecondHandSongs page"),
+    ("Setlist.fm","https://www.setlist.fm/setlists/","Setlist.fm artist page"),
+    ("Songkick","https://www.songkick.com/artists/","Songkick artist page"),
+    ("Bandsintown","https://www.bandsintown.com/","Bandsintown artist page"),
+    ("VGMdb","https://vgmdb.net/artist/","VGMdb page for video game/anime music artists"),
+    ("VIAF","https://viaf.org/viaf/","Virtual International Authority File ID"),
+    ("CPDL","https://www.cpdl.org/wiki/index.php/","Choral Public Domain Library page"),
+    ("BookBrainz","https://bookbrainz.org/creator/","BookBrainz page"),
+
+    # Content
+    ("Lyrics Page","https://","Page containing lyrics for the artist"),
+    ("Blog","https://","Artist blog"),
+    ("Biography","https://","Online biography of the artist"),
+    ("Discography Page","https://","Online discography of the artist's works"),
+    ("Interview","https://","URL containing an interview with the artist"),
+    ("Image","https://","A pictorial image of the artist"),
+    ("Fan Page","https://","Fan-created website for the artist"),
+    ("Online Community","https://","Online community or forum for the artist"),
+    ("Art Gallery", "https://","Art gallery page e.g. DeviantArt, pixiv"),
+
+    # Funding / Tickets
+    ("Crowdfunding","https://","Crowdfunding page e.g. Kickstarter, Indiegogo"),
+    ("Patronage","https://","Patronage/donation page e.g. Patreon, PayPal.me"),
+    ("Ticketing","https://","Ticket purchase page for events"),
+
+    # Fallback
+    ("Other","https://","External link that does not fit any other category"),
+]
+    for i in link_types:
+            insert_multiple_columns_data(LinkTypeLookup,{"name":i[0],"base_url":i[1],"description":i[2]})
+    logger.info("Links Type Lookup Seeded")
+
+seed_link_types_lookup()
+# seed_artist_type_lookup()
+# seed_alias_types_lookup()
+# seed_locale_lookup()
 # seed_gender_lookup()
 # seed_country_lookup_restcountries()

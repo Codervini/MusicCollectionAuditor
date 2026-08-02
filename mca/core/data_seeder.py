@@ -150,6 +150,6 @@ def seed_artist_aliases():
         pprint(f"{artist_count}/{len(id_aliases_data)} completed")
     logger.info("%d artist aliases inserted succesfully",len(id_aliases_data))
 
-seed_artist_aliases()
+# seed_artist_aliases()
 # seed_artist_props_musicbrainz()
 # pprint(discover_artists_lastfm(969))
