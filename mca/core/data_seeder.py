@@ -150,6 +150,16 @@ def seed_artist_aliases():
         pprint(f"{artist_count}/{len(id_aliases_data)} completed")
     logger.info("%d artist aliases inserted succesfully",len(id_aliases_data))
 
+def seed_artists_links():
+    ids = get_all_values_of_a_column_in_tb(Artists,"id","created_at")
+
+
+
+class SeedArtistsFamily:
+    def __init__(self):
+        pass
+    def seed_artists(self,artist_discovery_limit:int=50, similar_artist_discovery_limit:int=969):
+        pass
 # seed_artist_aliases()
 # seed_artist_props_musicbrainz()
 # pprint(discover_artists_lastfm(969))
