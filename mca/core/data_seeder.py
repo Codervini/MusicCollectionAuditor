@@ -12,11 +12,14 @@ from datetime import date
 import time
 import json
 import ast
+from mca_tools.cacher.api_cacher import *
+import mca_tools.cacher.parsed_cacher as pc
+
 CONFIG_CONSTANTS = dotenv_values(Path("config",".env"))
 logger = set_logger(__name__)
 lastfm_api_key = CONFIG_CONSTANTS["LASTFM_API_KEY"]
-
-
+lastfm_session = get_session("lastfm")
+musicbrainz_session = get_session("musicbrainz")
 
 def discover_artists_lastfm(limit:int = 50):
     response = requests.get(f"http://ws.audioscrobbler.com/2.0/?method=chart.gettopartists&api_key={lastfm_api_key}&format=json&limit={limit}")
@@ -157,9 +160,32 @@ def seed_artists_links():
 
 class SeedArtistsFamily:
     def __init__(self):
-        pass
+        self.artist_and_mbid = {}
     def seed_artists(self,artist_discovery_limit:int=50, similar_artist_discovery_limit:int=969):
-        pass
+        api = f"http://ws.audioscrobbler.com/2.0/?method=chart.gettopartists&api_key={lastfm_api_key}&format=json&limit={artist_discovery_limit}"
+        data = api_request_handler(api,lastfm_session)
+        for i in data["artists"]["artist"]:
+            name = i.get("name","")
+            self.artist_and_mbid[name] = i.get("mbid","")
+
+        api = f"http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=cher&api_key={lastfm_api_key}&format=json&limit={limit}&artist={artist}&mbid={mbid}"
+        respone = requests.get(api)
+        logger.debug("Artist dsa: %s", artist)
+        logger.debug("API dsa response: %s", respone)
+        data = {}
+        if respone.status_code == 200:
+            res = respone.json()
+            logger.debug("Response dsa data: %s", res)
+            with open(file=Path("data","log",f"sussy artist seed {date.today()}.csv"), mode="a") as f:
+                writer = csv.writer(f)
+                for i in res["similarartists"]["artist"]:
+                    if i.get("name").find(" & ") == -1: 
+                        data[i.get("name")] = [i.get("mbid", ""),i.get("match","")]
+                    else:
+                        writer.writerow([i.get("name"),i.get("mbid", ""),i.get("match","")])
+            return data
+
+        
 # seed_artist_aliases()
 # seed_artist_props_musicbrainz()
 # pprint(discover_artists_lastfm(969))
