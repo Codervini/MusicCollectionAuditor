@@ -21,49 +21,43 @@ lastfm_api_key = CONFIG_CONSTANTS["LASTFM_API_KEY"]
 lastfm_session = get_session("lastfm")
 musicbrainz_session = get_session("musicbrainz")
 
-def discover_artists_lastfm(limit:int = 50):
-    response = requests.get(f"http://ws.audioscrobbler.com/2.0/?method=chart.gettopartists&api_key={lastfm_api_key}&format=json&limit={limit}")
-    logger.debug("API dal response: %s", response)
-    dictt = {}
-    if response.status_code == 200:
-        data = response.json()
-        logger.debug("Response dal data: %s", data)
-        for i in data["artists"]["artist"]:
-            name =i.get("name","")
-            dictt[name] = i.get("mbid","")
-        return dictt
+def discover_artists_lastfm(artist_discovery_limit:int = 50) -> dict:
+    artist_and_mbid = {}
+    api = f"http://ws.audioscrobbler.com/2.0/?method=chart.gettopartists&api_key={lastfm_api_key}&format=json&limit={artist_discovery_limit}"
+    data = api_request_handler(api,lastfm_session)
+    for i in data["artists"]["artist"]:
+        name = i.get("name","")
+        artist_and_mbid[name] = i.get("mbid","")
+    logger.info(f"Discovered {len(data)} artists")
+    return artist_and_mbid
 
 def discover_similar_artists_lastfm(artist,mbid = "",limit:int = 50):
     api = f"http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=cher&api_key={lastfm_api_key}&format=json&limit={limit}&artist={artist}&mbid={mbid}"
-    respone = requests.get(api)
-    logger.debug("Artist dsa: %s", artist)
-    logger.debug("API dsa response: %s", respone)
+    response = api_request_handler(api,lastfm_session)
     data = {}
-    if respone.status_code == 200:
-        res = respone.json()
-        logger.debug("Response dsa data: %s", res)
-        with open(file=Path("data","log",f"sussy artist seed {date.today()}.csv"), mode="a") as f:
-            writer = csv.writer(f)
-            for i in res["similarartists"]["artist"]:
-                if i.get("name").find(" & ") == -1: 
-                    data[i.get("name")] = [i.get("mbid", ""),i.get("match","")]
-                else:
-                    writer.writerow([i.get("name"),i.get("mbid", ""),i.get("match","")])
-        return data
+    with open(file=Path("data","log",f"sussy similar artist seed {date.today()}.csv"), mode="a") as f:
+        writer = csv.writer(f)
+        for i in response["similarartists"]["artist"]:
+            if i.get("name").find(" & ") == -1: 
+                data[i.get("name")] = [i.get("mbid", ""),i.get("match","")]
+            else:
+                writer.writerow([i.get("name"),i.get("mbid", ""),i.get("match","")])
+    logger.info(f"Discovered {len(data)} similar artists for {artist}")    
+    return data
     
 
 
-def seed_artist_name_and_mbid(artist_limit, similar_artist_limit):
-    artist_list1 = discover_artists_lastfm(limit=artist_limit)
-    with open(Path("data","crucialdata",f"artists_tb {date.today()}.csv"),"a") as f:
-        writer = csv.writer(f)
-        for name,mbid in artist_list1.items():
-            writer.writerow([name,mbid])    #Save to CSV
-            insert_multiple_columns_data(Artists,{"name":name,"mbid":mbid})
-            artist_list_2 = discover_similar_artists_lastfm(name,mbid,similar_artist_limit)
-            for name,v in artist_list_2.items():
-                writer.writerow([name,v[0]]) #Save to CSV
-                insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
+# def seed_artist_name_and_mbid(artist_limit, similar_artist_limit):
+#     artist_list1 = discover_artists_lastfm(limit=artist_limit)
+#     with open(Path("data","crucialdata",f"artists_tb {date.today()}.csv"),"a") as f:
+#         writer = csv.writer(f)
+#         for name,mbid in artist_list1.items():
+#             writer.writerow([name,mbid])    #Save to CSV
+#             insert_multiple_columns_data(Artists,{"name":name,"mbid":mbid})
+#             artist_list_2 = discover_similar_artists_lastfm(name,mbid,similar_artist_limit)
+#             for name,v in artist_list_2.items():
+#                 writer.writerow([name,v[0]]) #Save to CSV
+#                 insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
             
 def seed_artist_props_musicbrainz(cache = True):
     mbids = get_all_values_of_a_column_in_tb(Artists,"mbid","created_at")
@@ -160,30 +154,16 @@ def seed_artists_links():
 
 class SeedArtistsFamily:
     def __init__(self):
-        self.artist_and_mbid = {}
+        pass
     def seed_artists(self,artist_discovery_limit:int=50, similar_artist_discovery_limit:int=969):
-        api = f"http://ws.audioscrobbler.com/2.0/?method=chart.gettopartists&api_key={lastfm_api_key}&format=json&limit={artist_discovery_limit}"
-        data = api_request_handler(api,lastfm_session)
-        for i in data["artists"]["artist"]:
-            name = i.get("name","")
-            self.artist_and_mbid[name] = i.get("mbid","")
-
-        api = f"http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=cher&api_key={lastfm_api_key}&format=json&limit={limit}&artist={artist}&mbid={mbid}"
-        respone = requests.get(api)
-        logger.debug("Artist dsa: %s", artist)
-        logger.debug("API dsa response: %s", respone)
-        data = {}
-        if respone.status_code == 200:
-            res = respone.json()
-            logger.debug("Response dsa data: %s", res)
-            with open(file=Path("data","log",f"sussy artist seed {date.today()}.csv"), mode="a") as f:
-                writer = csv.writer(f)
-                for i in res["similarartists"]["artist"]:
-                    if i.get("name").find(" & ") == -1: 
-                        data[i.get("name")] = [i.get("mbid", ""),i.get("match","")]
-                    else:
-                        writer.writerow([i.get("name"),i.get("mbid", ""),i.get("match","")])
-            return data
+        artist_and_mbid = discover_artists_lastfm(limit=artist_discovery_limit)
+        for name,mbid in artist_and_mbid.items():
+            pc.set("lastfm",mbid,{"name":name})
+            insert_multiple_columns_data(Artists,{"name":name,"mbid":mbid})
+            similar_artists = discover_similar_artists_lastfm(name,mbid,similar_artist_discovery_limit)
+            for name,v in similar_artists.items():
+                pc.set("lastfm",v[0],{"name":name})
+                insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
 
         
 # seed_artist_aliases()
