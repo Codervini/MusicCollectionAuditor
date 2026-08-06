@@ -15,11 +15,13 @@ import ast
 from mca_tools.cacher.api_cacher import *
 import mca_tools.cacher.parsed_cacher as pc
 
+
 CONFIG_CONSTANTS = dotenv_values(Path("config",".env"))
+mb_header = {"User-Agent": f"{CONFIG_CONSTANTS["APP_NAME"]}/{CONFIG_CONSTANTS["VERSION"]} ( {CONFIG_CONSTANTS["CONTACT_EMAIL"]} )"}
 logger = set_logger(__name__)
 lastfm_api_key = CONFIG_CONSTANTS["LASTFM_API_KEY"]
-lastfm_session = get_session("lastfm")
-musicbrainz_session = get_session("musicbrainz")
+lastfm_session = get_session("lastfm",60)
+musicbrainz_session = get_session("musicbrainz",60)
 
 def discover_artists_lastfm(artist_discovery_limit:int = 50) -> dict:
     artist_and_mbid = {}
@@ -59,63 +61,63 @@ def discover_similar_artists_lastfm(artist,mbid = "",limit:int = 50):
 #                 writer.writerow([name,v[0]]) #Save to CSV
 #                 insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
             
-def seed_artist_props_musicbrainz(cache = True):
-    mbids = get_all_values_of_a_column_in_tb(Artists,"mbid","created_at")
-    header = {"User-Agent": f"{CONFIG_CONSTANTS["APP_NAME"]}/{CONFIG_CONSTANTS["VERSION"]} ( {CONFIG_CONSTANTS["CONTACT_EMAIL"]} )"}
-    cached_data = {}
-    data_counter = 0
-    if cache and Path("data","crucialdata",f"artists_props_tb.csv").exists():
-        with open(Path("data","crucialdata",f"artists_props_tb.csv"),"r", newline='') as f:
-            reader = csv.reader(f)
-            rl = list(reader)
-            cached_data = {item[0]:item[1:] for item in rl if item}
-            # pprint(cached_data)
-            # pprint(len(cached_data))
-            # for i in rl: print(i[0])
-        # time.sleep(5)
-    with open(Path("data","crucialdata",f"artists_props_tb.csv"),"a") as f:
-        writer = csv.writer(f)
-        for i in mbids:
-            print(data_counter, " Now: ", i)
-            try:
-                if cached_data and i in cached_data.keys():
-                    columns_data =  {   "isni": cached_data[i][0],
-                                        "sort_name":cached_data[i][1],
-                                        "born_or_formed": cached_data[i][2],
-                                        "died_or_disbanded": cached_data[i][3],
-                                        "gender_id": cached_data[i][4],
-                                        "country_id": cached_data[i][5],
-                                        "disambiguation": cached_data[i][6],
-                                        "raw_mb_response": cached_data[i][7]}
-                    logger.debug("Updated from cache: %s",i)
-                    print("Updated from cache: ",i)
-                else: 
-                    api = f"https://musicbrainz.org/ws/2/artist/{i}?fmt=json&inc=aliases"
-                    data = api_request_handler(api, header)
-                    if data != None:
-                        life_span = data.get("life-span", {})
-                        columns_data =  {   "mbid": i, "isni": (data["isnis"][0] if len(data["isnis"]) > 0 else ""),
-                                            "sort_name":data.get("sort-name", ""),
-                                            "born_or_formed": coerce_to_date(life_span.get("begin", None)),
-                                            "died_or_disbanded": coerce_to_date(life_span.get("end", None)),
-                                            "gender_id": fetch_id_by_value(GenderLookup,"name", data.get("gender", "Unknown")),
-                                            "country_id": fetch_id_by_value(CountryLookup, "alpha2", data.get("country", "Unknown")),
-                                            "disambiguation": data.get("disambiguation", ""),
-                                            "raw_mb_response": data}
-                        writer.writerow(columns_data.values())
-                        columns_data.pop("mbid")
-                        time.sleep(1)
-                    else:
-                        # writer.writerow([])
-                        logger.warning("No results from MB for: %s",i)
-                        print("No results from MB for: ",i)
-                if columns_data:
-                    update_multiple_columns_data(Artists,"mbid",i,columns_data)                
-                columns_data = None
-            except Exception as e:
-                    logger.critical("Failed for mbid %s: %s", i, e, exc_info=True)
-            data_counter += 1
-    logger.info("%d artist properties inserted succesfully",len(mbids))
+# def seed_artist_props_musicbrainz(cache = True):
+#     mbids = get_all_values_of_a_column_in_tb(Artists,"mbid","created_at")
+#     header = {"User-Agent": f"{CONFIG_CONSTANTS["APP_NAME"]}/{CONFIG_CONSTANTS["VERSION"]} ( {CONFIG_CONSTANTS["CONTACT_EMAIL"]} )"}
+#     cached_data = {}
+#     data_counter = 0
+#     if cache and Path("data","crucialdata",f"artists_props_tb.csv").exists():
+#         with open(Path("data","crucialdata",f"artists_props_tb.csv"),"r", newline='') as f:
+#             reader = csv.reader(f)
+#             rl = list(reader)
+#             cached_data = {item[0]:item[1:] for item in rl if item}
+#             # pprint(cached_data)
+#             # pprint(len(cached_data))
+#             # for i in rl: print(i[0])
+#         # time.sleep(5)
+#     with open(Path("data","crucialdata",f"artists_props_tb.csv"),"a") as f:
+#         writer = csv.writer(f)
+#         for i in mbids:
+#             print(data_counter, " Now: ", i)
+#             try:
+#                 if cached_data and i in cached_data.keys():
+#                     columns_data =  {   "isni": cached_data[i][0],
+#                                         "sort_name":cached_data[i][1],
+#                                         "born_or_formed": cached_data[i][2],
+#                                         "died_or_disbanded": cached_data[i][3],
+#                                         "gender_id": cached_data[i][4],
+#                                         "country_id": cached_data[i][5],
+#                                         "disambiguation": cached_data[i][6],
+#                                         "raw_mb_response": cached_data[i][7]}
+#                     logger.debug("Updated from cache: %s",i)
+#                     print("Updated from cache: ",i)
+#                 else: 
+#                     api = f"https://musicbrainz.org/ws/2/artist/{i}?fmt=json&inc=aliases"
+#                     data = api_request_handler(api, header)
+#                     if data != None:
+#                         life_span = data.get("life-span", {})
+#                         columns_data =  {   "mbid": i, "isni": (data["isnis"][0] if len(data["isnis"]) > 0 else ""),
+#                                             "sort_name":data.get("sort-name", ""),
+#                                             "born_or_formed": coerce_to_date(life_span.get("begin", None)),
+#                                             "died_or_disbanded": coerce_to_date(life_span.get("end", None)),
+#                                             "gender_id": fetch_id_by_value(GenderLookup,"name", data.get("gender", "Unknown")),
+#                                             "country_id": fetch_id_by_value(CountryLookup, "alpha2", data.get("country", "Unknown")),
+#                                             "disambiguation": data.get("disambiguation", ""),
+#                                             "raw_mb_response": data}
+#                         writer.writerow(columns_data.values())
+#                         columns_data.pop("mbid")
+#                         time.sleep(1)
+#                     else:
+#                         # writer.writerow([])
+#                         logger.warning("No results from MB for: %s",i)
+#                         print("No results from MB for: ",i)
+#                 if columns_data:
+#                     update_multiple_columns_data(Artists,"mbid",i,columns_data)                
+#                 columns_data = None
+#             except Exception as e:
+#                     logger.critical("Failed for mbid %s: %s", i, e, exc_info=True)
+#             data_counter += 1
+#     logger.info("%d artist properties inserted succesfully",len(mbids))
     
 def seed_artist_aliases():
     ids = get_all_values_of_a_column_in_tb(Artists,"id","created_at")
@@ -154,16 +156,60 @@ def seed_artists_links():
 
 class SeedArtistsFamily:
     def __init__(self):
-        pass
+        self.artist_and_mbid = {}
     def seed_artists(self,artist_discovery_limit:int=50, similar_artist_discovery_limit:int=969):
         artist_and_mbid = discover_artists_lastfm(limit=artist_discovery_limit)
         for name,mbid in artist_and_mbid.items():
+            self.artist_and_mbid[mbid] = name
             pc.set("lastfm",mbid,{"name":name})
             insert_multiple_columns_data(Artists,{"name":name,"mbid":mbid})
             similar_artists = discover_similar_artists_lastfm(name,mbid,similar_artist_discovery_limit)
             for name,v in similar_artists.items():
                 pc.set("lastfm",v[0],{"name":name})
+                self.artist_and_mbid[v[0]] = name
                 insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
+    def seed_artist_props_musicbrainz(self):      
+        data_counter = 0
+        for i in self.artist_and_mbid:
+            print(data_counter, " Now: ", i)
+            try:
+                parsed  = pc.get("lastfm",i)
+                if parsed:
+                    columns_data =  {   "isni": parsed[i][0],
+                                        "sort_name":parsed[i][1],
+                                        "born_or_formed": parsed[i][2],
+                                        "died_or_disbanded": parsed[i][3],
+                                        "gender_id": parsed[i][4],
+                                        "country_id": parsed[i][5],
+                                        "disambiguation": parsed[i][6],
+                                        "raw_mb_response": parsed[i][7]}
+                    logger.debug("Fetched from cache: %s",i)
+                    print("Fetched from cache: ",i)
+                else: 
+                    api = f"https://musicbrainz.org/ws/2/artist/{i}?fmt=json&inc=aliases"
+                    data = api_request_handler(api, "musicbrainz", mb_header)
+                    if data:
+                        life_span = data.get("life-span", {})
+                        columns_data =  {   "isni": (data["isnis"][0] if len(data["isnis"]) > 0 else ""),
+                                            "sort_name":data.get("sort-name", ""),
+                                            "born_or_formed": coerce_to_date(life_span.get("begin", None)),
+                                            "died_or_disbanded": coerce_to_date(life_span.get("end", None)),
+                                            "gender_id": fetch_id_by_value(GenderLookup,"name", data.get("gender", "Unknown")),
+                                            "country_id": fetch_id_by_value(CountryLookup, "alpha2", data.get("country", "Unknown")),
+                                            "disambiguation": data.get("disambiguation", ""),
+                                            "raw_mb_response": data}
+                        pc.set("musicbrainz",i,columns_data)
+                        time.sleep(1)
+                    else:
+                        logger.warning("No results from MB for: %s",i)
+                        print("No results from MB for: ",i)
+                if columns_data:
+                    update_multiple_columns_data(Artists,"mbid",i,columns_data)     
+                    data_counter += 1           
+                columns_data = None
+            except Exception as e:
+                    logger.error("Failed for mbid %s: %s", i, e, exc_info=True)
+        logger.info("%d of %d artist properties seeded succesfully",data_counter,len(self.artist_and_mbid))
 
         
 # seed_artist_aliases()
