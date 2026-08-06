@@ -82,7 +82,7 @@ def get_column_data_with_id(tablename, id, column):
             command = select(column).where(tablename.id == id)
             return session.execute(command).scalar_one_or_none()
 
-a = get_fk_keys_in_table(tb.MPR.value)
+# a = get_fk_keys_in_table(tb.MPR.value)
 # pprint(a)
 
 
@@ -109,7 +109,7 @@ def fetch_id_by_value(table,identifying_column,value):
 
 def get_all_values_of_a_column_in_tb(table,column,sort_column_asc = None):
     with SESSION_MANAGER() as session:
-        stmt = select(getattr(table,column)).order_by(getattr(table,sort_column_asc)) if sort_column_asc else select(getattr(table,column))
+        stmt = select(getattr(table,column)).order_by(sort_column_asc and getattr(table,sort_column_asc)) 
         result = session.execute(stmt)
         data = result.scalars().all()
         logger.debug(data)
@@ -121,6 +121,15 @@ def update_multiple_columns_data(table,id_column,id_value,column_value: dict):
         # data = result.scalar_one_or_none()
         logger.debug(result)
         session.commit()
+def get_all_values_of_multiple_column_in_tb(table:Base,columns:list,sort_column_asc = None):
+    with SESSION_MANAGER() as session:
+        stmt = select(*[getattr(table,column) for column in columns]).order_by( sort_column_asc and getattr(table,sort_column_asc))
+        result = session.execute(stmt)
+        data = result.all()
+        pprint(data)
+        logger.debug(data)
+    return data
+get_all_values_of_multiple_column_in_tb(Artists,["id","name","mbid"],"created_at")
 # pprint(get_all_values_of_a_column_in_tb(Artists,"mbid"))
 # print(fetch_id_by_value(GenderLookup,"Mixe Group"))
 class Song:
