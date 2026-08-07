@@ -103,9 +103,9 @@ def fetch_id_by_value(table,identifying_column,value):
     with SESSION_MANAGER() as session:
         stmt = select(table.id).where(getattr(table, identifying_column) == value)
         result = session.execute(stmt)
-        data = result.scalar_one_or_none()
-        logger.debug(data)
-        return data
+        res = result.scalar_one_or_none()
+        logger.debug(f"FETCHED id : {res} from {table} using {identifying_column}:{value}")
+        return res
 
 def get_all_values_of_a_column_in_tb(table,column,sort_column_asc = None):
     with SESSION_MANAGER() as session:
@@ -114,22 +114,24 @@ def get_all_values_of_a_column_in_tb(table,column,sort_column_asc = None):
         data = result.scalars().all()
         logger.debug(data)
         return data
-def update_multiple_columns_data(table,id_column,id_value,column_value: dict):
+def update_multiple_columns_data(table:Base, id_column:str, id_value:str, column_value: dict):
     with SESSION_MANAGER() as session:
-        stmt = update(table).where(getattr(table,id_column) == id_value).values(**column_value)
+        stmt = update(table.__table__).where(getattr(table,id_column) == id_value).values(**column_value)
         result = session.execute(stmt)
-        # data = result.scalar_one_or_none()
-        logger.debug(result)
+        rowcount = result.rowcount
         session.commit()
+        # print(rowcount)
+        logger.debug(f"Updated {table} :: {id_column} : {id_value} {rowcount} rows")
+        
 def get_all_values_of_multiple_column_in_tb(table:Base,columns:list,sort_column_asc = None):
     with SESSION_MANAGER() as session:
         stmt = select(*[getattr(table,column) for column in columns]).order_by( sort_column_asc and getattr(table,sort_column_asc))
         result = session.execute(stmt)
         data = result.all()
-        pprint(data)
+        # pprint(data)
         logger.debug(data)
     return data
-get_all_values_of_multiple_column_in_tb(Artists,["id","name","mbid"],"created_at")
+# get_all_values_of_multiple_column_in_tb(Artists,["id","name","mbid"],"created_at")
 # pprint(get_all_values_of_a_column_in_tb(Artists,"mbid"))
 # print(fetch_id_by_value(GenderLookup,"Mixe Group"))
 class Song:
