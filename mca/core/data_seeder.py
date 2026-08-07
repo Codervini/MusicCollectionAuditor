@@ -2,7 +2,8 @@ import requests
 from dotenv import dotenv_values
 from pathlib import Path
 from pprint import pprint
-from mca.core.db_butler import insert_multiple_columns_data , fetch_id_by_value , get_all_values_of_a_column_in_tb ,update_multiple_columns_data
+from mca.core.db_butler import ( insert_multiple_columns_data , fetch_id_by_value , get_all_values_of_a_column_in_tb ,
+                                update_multiple_columns_data, get_all_values_of_multiple_column_in_tb) 
 from schema.models.file_universe import *
 from schema.lookup.file_universe_lookup import *
 from mca.core.logger import set_logger
@@ -157,8 +158,9 @@ def seed_artists_links():
 class SeedArtistsFamily:
     def __init__(self):
         self.artist_and_mbid = {}
+        self.id_tb_data = get_all_values_of_multiple_column_in_tb(Artists,["id","name","mbid"],"created_at")
     def seed_artists(self,artist_discovery_limit:int=50, similar_artist_discovery_limit:int=969):
-        artist_and_mbid = discover_artists_lastfm(limit=artist_discovery_limit)
+        artist_and_mbid = discover_artists_lastfm(artist_discovery_limit)
         for name,mbid in artist_and_mbid.items():
             self.artist_and_mbid[mbid] = name
             pc.set("lastfm",mbid,{"name":name})
@@ -170,24 +172,26 @@ class SeedArtistsFamily:
                 insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
     def seed_artist_props_musicbrainz(self):      
         data_counter = 0
-        for i in self.artist_and_mbid:
-            print(data_counter, " Now: ", i)
+        for id, name, mbid in self.id_tb_data:
+            print(data_counter, " Now: ", mbid)
             try:
-                parsed  = pc.get("lastfm",i)
+                parsed  = pc.get("musicbrainz",mbid)
+                # pprint(parsed)
+                # time.sleep(3)
                 if parsed:
-                    columns_data =  {   "isni": parsed[i][0],
-                                        "sort_name":parsed[i][1],
-                                        "born_or_formed": parsed[i][2],
-                                        "died_or_disbanded": parsed[i][3],
-                                        "gender_id": parsed[i][4],
-                                        "country_id": parsed[i][5],
-                                        "disambiguation": parsed[i][6],
-                                        "raw_mb_response": parsed[i][7]}
-                    logger.debug("Fetched from cache: %s",i)
-                    print("Fetched from cache: ",i)
+                    columns_data =  {   "isni": parsed["isni"],
+                                        "sort_name":parsed["sort_name"],
+                                        "born_or_formed": parsed["born_or_formed"],
+                                        "died_or_disbanded": parsed["died_or_disbanded"],
+                                        "gender_id": parsed["gender_id"],
+                                        "country_id": parsed["country_id"],
+                                        "disambiguation": parsed["disambiguation"],
+                                        "raw_mb_response": parsed["raw_mb_response"]}
+                    logger.debug("Fetched from cache: %s",mbid)
+                    print("Fetched from cache: ",mbid)
                 else: 
-                    api = f"https://musicbrainz.org/ws/2/artist/{i}?fmt=json&inc=aliases"
-                    data = api_request_handler(api, "musicbrainz", mb_header)
+                    api = f"https://musicbrainz.org/ws/2/artist/{mbid}?fmt=json&inc=aliases"
+                    data = api_request_handler(api, musicbrainz_session, mb_header)
                     if data:
                         life_span = data.get("life-span", {})
                         columns_data =  {   "isni": (data["isnis"][0] if len(data["isnis"]) > 0 else ""),
@@ -198,20 +202,60 @@ class SeedArtistsFamily:
                                             "country_id": fetch_id_by_value(CountryLookup, "alpha2", data.get("country", "Unknown")),
                                             "disambiguation": data.get("disambiguation", ""),
                                             "raw_mb_response": data}
-                        pc.set("musicbrainz",i,columns_data)
+                        pc.set("musicbrainz",mbid,columns_data)
                         time.sleep(1)
                     else:
-                        logger.warning("No results from MB for: %s",i)
-                        print("No results from MB for: ",i)
+                        logger.warning("No results from MB for: %s",mbid)
+                        print("No results from MB for: ",mbid)
                 if columns_data:
-                    update_multiple_columns_data(Artists,"mbid",i,columns_data)     
-                    data_counter += 1           
+                    update_multiple_columns_data(Artists,"mbid",mbid,columns_data) 
+                    logger.info(f"UPDATED Artist {name} : {mbid} props ")    
+                               
                 columns_data = None
             except Exception as e:
-                    logger.error("Failed for mbid %s: %s", i, e, exc_info=True)
+                    logger.error("Failed for mbid %s: %s", mbid, e, exc_info=True)
+            data_counter += 1
         logger.info("%d of %d artist properties seeded succesfully",data_counter,len(self.artist_and_mbid))
 
-        
+    def seed_artist_aliases(self):
+        alias_count = 0
+        artist_count = 0
+        fail_count = 0
+        success_count = 0
+        for id, name, mbid in self.id_tb_data:
+            parsed =  pc.get("musicbrainz",mbid)
+            # pprint(parsed)
+            # time.sleep(2)
+            
+            if parsed and len(parsed["raw_mb_response"]["aliases"]) > 0:
+                aliases = parsed["raw_mb_response"]["aliases"]
+                for alias in aliases:
+                    data = {"artist_id":fetch_id_by_value(Artists,"mbid",mbid),
+                            "alias_type_id": fetch_id_by_value(AliasTypeLookup,"name",alias.get("type","Unspecified").capitalize()),
+                            "name":alias.get("name","Unknown"),
+                            "sort_name":alias.get("sort-name","Unknown"),
+                            "locale_id": fetch_id_by_value(LocaleLookup,"code",alias.get("locale",None)),
+                            "is_primary": alias.get("primary",None)
+                            }
+                    # pprint(alias)
+                    # pprint(data)
+                    insert_multiple_columns_data(ArtistAliases,data)
+                    alias_count+=1
+                    pprint(f"{alias_count}/{len(aliases)} of {name}:{id} inserted")
+                    logger.info(f"{alias_count}/{len(aliases)} of {name}:{id} inserted")
+                success_count +=1
+                logger.info("%d aliases of %s:%s  inserted succesfully",len(aliases),name,id)
+            else:
+                fail_count+=1
+                logger.warning(f"No aliases of {name}:{id} found")
+            alias_count = 0
+            artist_count+=1
+        pprint(f"{artist_count}/{len(self.id_tb_data)} completed")
+        logger.info("%d of %d artist aliases inserted succesfully",success_count,artist_count)
+        logger.info("%d of %d artist aliases insertion failed",fail_count,artist_count)
+# SeedArtistsFamily().seed_artists()       
+# SeedArtistsFamily().seed_artist_props_musicbrainz()    
+SeedArtistsFamily().seed_artist_aliases()     
 # seed_artist_aliases()
 # seed_artist_props_musicbrainz()
 # pprint(discover_artists_lastfm(969))
