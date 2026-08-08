@@ -104,7 +104,7 @@ def fetch_id_by_value(table,identifying_column,value):
         stmt = select(table.id).where(getattr(table, identifying_column) == value)
         result = session.execute(stmt)
         res = result.scalar_one_or_none()
-        logger.debug(f"FETCHED id : {res} from {table} using {identifying_column}:{value}")
+        logger.debug(f"FETCHED id:{res} from {table} using {identifying_column}:{value}")
         return res
 
 def get_all_values_of_a_column_in_tb(table,column,sort_column_asc = None):
