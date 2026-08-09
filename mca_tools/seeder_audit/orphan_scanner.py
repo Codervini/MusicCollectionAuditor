@@ -12,12 +12,47 @@ rename itself — these are unresolved runs with unknown completion state.
 
 import logging
 from pathlib import Path
-
-logger = logging.getLogger(__name__)
+from audit_flusher import flush_to_postgres
+from sqlalchemy.orm import Session
+from schema.base import SESSION_MANAGER
+from mca.core.logger import set_logger
+# import traceback
+logger = set_logger(__name__)
 
 # Resolved relative to project root — adjust if your tmp/ lives elsewhere
 TMP_DIR = Path(__file__).resolve().parents[2] / "tmp"
 
+def orphan_handler(session : Session ,recent_orphan_scan_limit : int = 1):
+    # traceback.print_stack()
+    files = sorted(TMP_DIR.glob("*.orphaned.jsonl"),reverse=True,key=lambda f:f.stat().st_mtime)[:recent_orphan_scan_limit]
+    # print(type(files))
+    if not files:
+        logger.warning("No orphaned JSONL detected!")
+        return
+    
+    for i in files:
+    #    print(i)
+       logger.info("Orphaned JSONL detected, attempting to insert to log: %s", i)
+       a = flush_to_postgres(session,i,orphan=True)
+       if a > 0:
+           logger.info("Orphaned JSONL inserted to log: %s with %d records", i,a)
+           new_name = i.with_suffix("").with_suffix(".orphaned.saved.jsonl")
+           i.rename(new_name)
+           logger.info(f"Orphaned JSONL renamed to: {new_name}")
+       elif a == 0:
+           logger.warning("Orphaned JSONL failed to insert to log because it has no records in it: %s", i)
+           new_name = i.with_suffix("").with_suffix(".orphaned.empty.jsonl")
+           i.rename(new_name)
+           logger.info(f"Orphaned JSONL renamed to: {new_name}")
+       elif a == -1:
+           logger.error("Orphaned JSONL failed to insert to log due to some problem: %s", i,stack_info=True)
+           new_name = i.with_suffix("").with_suffix("sus.orphaned.jsonl")
+           i.rename(new_name)
+           logger.info(f"Orphaned JSONL renamed to: {new_name}")
+           
+           
+with SESSION_MANAGER() as session:
+    orphan_handler(session,1)
 
 def scan_for_orphans() -> list[Path]:
     """
@@ -37,7 +72,10 @@ def scan_for_orphans() -> list[Path]:
         name = path.name
         if name.endswith(".done.jsonl") or \
            name.endswith(".failed.jsonl") or \
-           name.endswith(".orphaned.jsonl"):
+           name.endswith(".orphaned.jsonl") or \
+           name.endswith(".orphaned.saved.jsonl") or \
+           name.endswith(".orphaned.empty.jsonl") or \
+           name.endswith(".sus.orphaned.jsonl"):
             continue
 
         # Plain .jsonl — orphaned run

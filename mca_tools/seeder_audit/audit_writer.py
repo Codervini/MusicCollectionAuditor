@@ -24,14 +24,17 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-
+from .audit_flusher import flush_to_postgres
+from .orphan_scanner import scan_for_orphans, orphan_handler
 logger = logging.getLogger(__name__)
 
 TMP_DIR = Path(__file__).resolve().parents[2] / "tmp"
 
 
 class AuditWriter:
-    def __init__(self, seeder_name: str):
+    def __init__(self, session, seeder_name: str):
+        scan_for_orphans()
+        orphan_handler(session)
         TMP_DIR.mkdir(parents=True, exist_ok=True)
 
         self.seeder_name = seeder_name
@@ -87,7 +90,7 @@ class AuditWriter:
         self._file.write(json.dumps(record) + "\n")
         self._file.flush()  # ensure line hits disk immediately
 
-    def finish(self, success: bool) -> Path:
+    def finish(self, success: bool = True) -> Path:
         """
         Close the file and rename it to .done.jsonl or .failed.jsonl.
 
@@ -105,7 +108,7 @@ class AuditWriter:
 
         logger.info("AuditWriter finished | run_id=%s | status=%s | rows=%d | file=%s",self.run_id,suffix,self._row_counter,final_path.name)
 
-        return final_path
+        flush_to_postgres(final_path)
 
     @property
     def row_count(self) -> int:

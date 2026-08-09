@@ -21,8 +21,7 @@ from schema.models.seeder_audit_log import SeedAuditLog
 
 logger = logging.getLogger(__name__)
 
-
-def flush_to_postgres(session: Session, jsonl_path: Path) -> int:
+def flush_to_postgres(session: Session, jsonl_path: Path, orphan: bool = False) -> int:
     """
     Bulk insert all records from a .done.jsonl file into seed_audit_log.
 
@@ -40,8 +39,11 @@ def flush_to_postgres(session: Session, jsonl_path: Path) -> int:
     if not jsonl_path.exists():
         raise FileNotFoundError(f"Audit JSONL file not found: {jsonl_path}")
 
-    if not jsonl_path.name.endswith(".done.jsonl"):
+    if not orphan and not jsonl_path.name.endswith(".done.jsonl"):
         raise ValueError(f"flush_to_postgres expects a .done.jsonl file, got: {jsonl_path.name}")
+
+    if orphan and not jsonl_path.name.endswith(".orphaned.jsonl"):
+        raise ValueError(f"flush_to_postgres expects a .oprhaned.jsonl for orphan = True file, got: {jsonl_path.name}")
 
     records = []
     with open(jsonl_path, encoding="utf-8") as f:
@@ -66,5 +68,6 @@ def flush_to_postgres(session: Session, jsonl_path: Path) -> int:
         session.rollback()
         logger.error("Failed to flush audit records to Postgres | file=%s | error=%s",jsonl_path.name,e,)
         raise
+        return -1
 
     return len(records)
