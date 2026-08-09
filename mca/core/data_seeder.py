@@ -15,7 +15,9 @@ import json
 import ast
 from mca_tools.cacher.api_cacher import *
 import mca_tools.cacher.parsed_cacher as pc
-
+from mca_tools.seeder_audit.audit_flusher import *
+from mca_tools.seeder_audit.audit_writer import *
+from mca_tools.seeder_audit.orphan_scanner import *
 
 CONFIG_CONSTANTS = dotenv_values(Path("config",".env"))
 mb_header = {"User-Agent": f"{CONFIG_CONSTANTS["APP_NAME"]}/{CONFIG_CONSTANTS["VERSION"]} ( {CONFIG_CONSTANTS["CONTACT_EMAIL"]} )"}
@@ -160,17 +162,25 @@ class SeedArtistsFamily:
         self.artist_and_mbid = {}
         self.id_tb_data = get_all_values_of_multiple_column_in_tb(Artists,["id","name","mbid"],"created_at")
     def seed_artists(self,artist_discovery_limit:int=50, similar_artist_discovery_limit:int=969):
+        scan_for_orphans()
+        auditor = AuditWriter(seeder_name="seed_artists")
+
         artist_and_mbid = discover_artists_lastfm(artist_discovery_limit)
         for name,mbid in artist_and_mbid.items():
             self.artist_and_mbid[mbid] = name
             pc.set("lastfm",mbid,{"name":name})
             insert_multiple_columns_data(Artists,{"name":name,"mbid":mbid})
+            auditor.record(Artists.__tablename__,mbid)
             similar_artists = discover_similar_artists_lastfm(name,mbid,similar_artist_discovery_limit)
             for name,v in similar_artists.items():
                 pc.set("lastfm",v[0],{"name":name})
                 self.artist_and_mbid[v[0]] = name
                 insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
+                auditor.record(Artists.__tablename__,v[0])
+        flush_to_postgres(auditor.finish(True))
     def seed_artist_props_musicbrainz(self):      
+        scan_for_orphans()
+        auditor = AuditWriter(seeder_name="seed_artist_props_musicbrainz")
         data_counter = 0
         for id, name, mbid in self.id_tb_data:
             print(data_counter, " Now: ", mbid)
@@ -209,15 +219,19 @@ class SeedArtistsFamily:
                         print("No results from MB for: ",mbid)
                 if columns_data:
                     update_multiple_columns_data(Artists,"mbid",mbid,columns_data) 
+                    auditor.record(Artists.__tablename__,str(id),"inserted")
                     logger.info(f"UPDATED Artist {name} : {mbid} props ")    
                                
                 columns_data = None
             except Exception as e:
                     logger.error("Failed for mbid %s: %s", mbid, e, exc_info=True)
             data_counter += 1
+        flush_to_postgres(auditor.finish(True))
         logger.info("%d of %d artist properties seeded succesfully",data_counter,len(self.artist_and_mbid))
 
     def seed_artist_aliases(self):
+        scan_for_orphans()
+        auditor = AuditWriter(seeder_name="seed_artist_aliases")
         alias_count = 0
         artist_count = 0
         fail_count = 0
@@ -239,6 +253,7 @@ class SeedArtistsFamily:
                             }
                     # pprint(alias)
                     # pprint(data)
+                    auditor.record(ArtistAliases.__tablename__,id)
                     insert_multiple_columns_data(ArtistAliases,data)
                     alias_count+=1
                     pprint(f"{alias_count}/{len(aliases)} of {name}:{id} inserted")
@@ -251,6 +266,7 @@ class SeedArtistsFamily:
             alias_count = 0
             artist_count+=1
         pprint(f"{artist_count}/{len(self.id_tb_data)} completed")
+        flush_to_postgres(auditor.finish(True))
         logger.info("%d of %d artist aliases inserted succesfully",success_count,artist_count)
         logger.info("%d of %d artist aliases insertion failed",fail_count,artist_count)
 # SeedArtistsFamily().seed_artists()       
