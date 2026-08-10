@@ -96,8 +96,12 @@ def insert_multiple_columns_data(table, column_value: dict, conflict_columns: li
             )
         else:
             stmt = stmt.on_conflict_do_nothing()
-        logger.debug(session.execute(stmt))
+        result = session.execute(stmt)
         session.commit()
+        row_count = result.rowcount
+        logger.debug(row_count)
+        return row_count
+        
 
 def fetch_id_by_value(table,identifying_column,value):
     with SESSION_MANAGER() as session:
@@ -122,6 +126,7 @@ def update_multiple_columns_data(table:Base, id_column:str, id_value:str, column
         session.commit()
         # print(rowcount)
         logger.debug(f"Updated {table} :: {id_column} : {id_value} {rowcount} rows")
+        return rowcount
         
 def get_all_values_of_multiple_column_in_tb(table:Base,columns:list,sort_column_asc = None):
     with SESSION_MANAGER() as session:
