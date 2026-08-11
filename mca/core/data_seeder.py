@@ -203,7 +203,7 @@ class SeedArtistsFamily:
                     logger.debug("Fetched from cache: %s",mbid)
                     print("Fetched from cache: ",mbid)
                 else: 
-                    api = f"https://musicbrainz.org/ws/2/artist/{mbid}?fmt=json&inc=aliases"
+                    api = f"https://musicbrainz.org/ws/2/artist/{mbid}?fmt=json&inc=aliases+url-rels"
                     data = api_request_handler(api, musicbrainz_session, mb_header)
                     if data:
                         life_span = data.get("life-span", {})
@@ -277,6 +277,12 @@ class SeedArtistsFamily:
         flush_to_postgres(auditor.finish(True))
         logger.info("%d of %d artist aliases inserted succesfully",success_count,artist_count)
         logger.info("%d of %d artist aliases insertion failed",fail_count,artist_count)
+    def seed_artist_links(self):
+        for id, name, mbid in self.id_tb_data:
+            parsed = pc.get("musicbrainz",mbid)
+            if parsed:
+                
+
 # SeedArtistsFamily().seed_artists()       
 SeedArtistsFamily().seed_artist_props_musicbrainz()    
 # SeedArtistsFamily().seed_artist_aliases()     
