@@ -281,7 +281,9 @@ class SeedArtistsFamily:
         for id, name, mbid in self.id_tb_data:
             parsed = pc.get("musicbrainz",mbid)
             if parsed:
-                
+                data = parsed["relations"]
+                for link_entity in data:
+                    if link_entity.get("type-id",None) == fetch_id_by_value(LinkTypeLookup,"type-id",link_entity.get("type-id",None))
 
 # SeedArtistsFamily().seed_artists()       
 SeedArtistsFamily().seed_artist_props_musicbrainz()    
