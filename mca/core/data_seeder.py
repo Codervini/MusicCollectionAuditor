@@ -283,9 +283,10 @@ class SeedArtistsFamily:
             if parsed:
                 data = parsed["relations"]
                 for link_entity in data:
-                    if link_entity.get("type-id",None) == fetch_id_by_value(LinkTypeLookup,"type-id",link_entity.get("type-id",None))
+                    if link_entity.get("type-id",None) == fetch_id_by_value(LinkTypeLookup,"type-id",link_entity.get("type-id",None)):
 
-# SeedArtistsFamily().seed_artists()       
+
+SeedArtistsFamily().seed_artists()       
 SeedArtistsFamily().seed_artist_props_musicbrainz()    
 # SeedArtistsFamily().seed_artist_aliases()     
 # seed_artist_aliases()
