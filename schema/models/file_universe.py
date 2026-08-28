@@ -58,6 +58,7 @@ class Artists(Base):
     born_or_formed   = Column(Date, nullable=True)
     died_or_disbanded= Column(Date, nullable=True)
     disambiguation   = Column(Text, nullable=True)                          # e.g. "Queen guitarist" if name clash
+    data_complete    = Column(Boolean, default=False , nullable=False)
     raw_mb_response  = Column(JSONB, nullable=True)                         # full MusicBrainz API response
     created_at       = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at       = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
