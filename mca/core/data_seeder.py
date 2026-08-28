@@ -160,8 +160,22 @@ def seed_artists_links():
 class SeedArtistsFamily:
     def __init__(self):
         self.artist_and_mbid = {}
-        self.id_tb_data = get_all_values_of_multiple_column_in_tb(Artists,["id","name","mbid"],"created_at")
+        self._init_data()
+        # self.id_tb_data = get_all_values_of_multiple_column_in_tb(Artists,["id","name","mbid"],"created_at")
         self.session = SESSION_MANAGER()
+
+    def _init_data(self):
+        self.id_tb_data = get_all_values_of_multiple_column_in_tb(Artists,["id","name","mbid"],"created_at")
+    def _validate_artists_data_completion(self,id):
+        data = get_all_values_of_multiple_column_in_tb(Artists,[ 'name', 'sort_name', 'type_id', 
+                                                                'gender_id', 'mbid', 'isni', 'country_id', 'born_or_formed', 
+                                                                'died_or_disbanded', 'disambiguation', 'raw_mb_response']
+                                                                )
+        for i in data:
+            if not data[i]:
+                return False
+        return True 
+
     def seed_artists(self,artist_discovery_limit:int=50, similar_artist_discovery_limit:int=969):
         auditor = AuditWriter(self.session,seeder_name=inspect.currentframe().f_code.co_name)
         artist_and_mbid = discover_artists_lastfm(artist_discovery_limit)
@@ -203,7 +217,7 @@ class SeedArtistsFamily:
                     logger.debug("Fetched from cache: %s",mbid)
                     print("Fetched from cache: ",mbid)
                 else: 
-                    api = f"https://musicbrainz.org/ws/2/artist/{mbid}?fmt=json&inc=aliases+url-rels"
+                    api = f"https://musicbrainz.org/ws/2/artist/{mbid}?fmt=json&inc=aliases+url-rels+tags+genres+annotation+ratings"
                     data = api_request_handler(api, musicbrainz_session, mb_header)
                     if data:
                         life_span = data.get("life-span", {})
@@ -214,13 +228,19 @@ class SeedArtistsFamily:
                                             "gender_id": fetch_id_by_value(GenderLookup,"name", data.get("gender", "Unknown")),
                                             "country_id": fetch_id_by_value(CountryLookup, "alpha2", data.get("country", "Unknown")),
                                             "disambiguation": data.get("disambiguation", ""),
-                                            "raw_mb_response": data}
+                                            "raw_mb_response": data
+                                        }
                         pc.set("musicbrainz",mbid,columns_data)
                         time.sleep(1)
                     else:
                         logger.warning("No results from MB for: %s",mbid)
                         print("No results from MB for: ",mbid)
                 if columns_data:
+                    columns_data["data_complete"] = True
+                    for i in columns_data:
+                        if not columns_data[i]:
+                            columns_data["data_complete"] = False
+                            break
                     updated = update_multiple_columns_data(Artists,"mbid",mbid,columns_data) 
                     if updated:
                         auditor.record(Artists.__tablename__,str(id),"inserted",status="inserted")
@@ -278,12 +298,18 @@ class SeedArtistsFamily:
         logger.info("%d of %d artist aliases inserted succesfully",success_count,artist_count)
         logger.info("%d of %d artist aliases insertion failed",fail_count,artist_count)
     def seed_artist_links(self):
+        self._init_data()
         for id, name, mbid in self.id_tb_data:
             parsed = pc.get("musicbrainz",mbid)
             if parsed:
-                data = parsed["relations"]
-                for link_entity in data:
-                    if link_entity.get("type-id",None) == fetch_id_by_value(LinkTypeLookup,"type-id",link_entity.get("type-id",None)):
+                relations = parsed["relations"]
+                for link_entity in relations:
+                    if link_entity.get("target",None) == "url" and link_entity["url"].get("resource"):
+                        data = {"artist_id": id,
+                                "link_type_id": fetch_id_by_value(ArtistLinks,"alt_type_id",link_entity.get("type-id","Other")),
+                                "url": link_entity["url"].get("resource"), 
+                        }
+
 
 
 SeedArtistsFamily().seed_artists()       
