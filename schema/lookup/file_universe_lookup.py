@@ -275,9 +275,11 @@ class LinkTypeLookup(Base):
     __tablename__ = "link_types_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=True)
+    alt_type_id     = Column(UUID(True),unique=True)
+    #mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     base_url    = Column(Text, nullable=True)                               # e.g. https://open.spotify.com/artist/
+    ingestion_source = Column(String(256), nullable=False)
     description = Column(Text, nullable=True)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
