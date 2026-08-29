@@ -259,7 +259,7 @@ class SeedArtistsFamily:
         auditor = AuditWriter(self.session,seeder_name=inspect.currentframe().f_code.co_name)
         alias_count = 0
         artist_count = 0
-        fail_count = 0
+        empty_count = 0
         success_count = 0
         for id, name, mbid in self.id_tb_data:
             parsed =  pc.get("musicbrainz",mbid)
@@ -270,7 +270,7 @@ class SeedArtistsFamily:
                 aliases = parsed["raw_mb_response"]["aliases"]
                 for alias in aliases:
                     data = {"artist_id":fetch_id_by_value(Artists,"mbid",mbid),
-                            "alias_type_id": fetch_id_by_value(AliasTypeLookup,"name",alias.get("type","Unspecified").capitalize()),
+                            "alias_type_id": fetch_id_by_value(AliasTypeLookup,"name",(alias.get("type") or "Unspecified").capitalize()),
                             "name":alias.get("name","Unknown"),
                             "sort_name":alias.get("sort-name","Unknown"),
                             "locale_id": fetch_id_by_value(LocaleLookup,"code",alias.get("locale",None)),
@@ -280,23 +280,23 @@ class SeedArtistsFamily:
                     # pprint(data)
                     inserted = insert_multiple_columns_data(ArtistAliases,data)
                     if inserted:
-                        auditor.record(ArtistAliases.__tablename__,str(id),"inserted",status="inserted")
+                        auditor.record(ArtistAliases.__tablename__,str(id),status="inserted")
                     else:
-                        auditor.record(ArtistAliases.__tablename__,str(id),"inserted",status="failed")
+                        auditor.record(ArtistAliases.__tablename__,str(id),status="failed")
                     alias_count+=1
                     pprint(f"{alias_count}/{len(aliases)} of {name}:{id} inserted")
                     logger.info(f"{alias_count}/{len(aliases)} of {name}:{id} inserted")
                 success_count +=1
                 logger.info("%d aliases of %s:%s  inserted succesfully",len(aliases),name,id)
             else:
-                fail_count+=1
+                empty_count+=1
                 logger.warning(f"No aliases of {name}:{id} found")
             alias_count = 0
             artist_count+=1
-        pprint(f"{artist_count}/{len(self.id_tb_data)} completed")
-        flush_to_postgres(auditor.finish(True))
-        logger.info("%d of %d artist aliases inserted succesfully",success_count,artist_count)
-        logger.info("%d of %d artist aliases insertion failed",fail_count,artist_count)
+        # pprint(f"{artist_count}/{len(self.id_tb_data)} completed")
+        auditor.finish(True)
+        logger.info("%d of %d artist's aliases inserted succesfully",success_count,artist_count)
+        logger.info("%d of %d artist's aliases not found",empty_count,artist_count)
     def seed_artist_links(self):
         self._init_data()
         for id, name, mbid in self.id_tb_data:
@@ -312,8 +312,9 @@ class SeedArtistsFamily:
 
 
 
-SeedArtistsFamily().seed_artists()       
-SeedArtistsFamily().seed_artist_props_musicbrainz()    
+# SeedArtistsFamily().seed_artists(69,969)       
+# SeedArtistsFamily().seed_artist_props_musicbrainz()  
+SeedArtistsFamily().seed_artist_aliases()     
 # SeedArtistsFamily().seed_artist_aliases()     
 # seed_artist_aliases()
 # seed_artist_props_musicbrainz()
