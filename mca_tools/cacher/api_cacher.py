@@ -4,7 +4,7 @@ from mca.core.logger import set_logger
 from datetime import timedelta
 
 logger = set_logger(__name__)
-services = {"musicbrainz", "lastfm", "discogs", "spotify"}
+services = {"musicbrainz", "lastfm", "discogs", "spotify","restcountries"}
 
 CACHE_DIR = Path(".cache/api")
 
