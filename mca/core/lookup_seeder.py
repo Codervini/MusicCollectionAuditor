@@ -9,12 +9,12 @@ from mca_tools.utils import api_request_handler
 import csv
 from babel.localedata import locale_identifiers
 from babel.core import Locale, UnknownLocaleError
-
+from mca_tools.cacher.api_cacher import get_session
 
 CONFIG_CONSTANTS = dotenv_values(Path("config",".env"))
 logger = set_logger(__name__)
 lastfm_api_key = CONFIG_CONSTANTS["LASTFM_API_KEY"]
-
+restcountries_session = get_session("restcountries",60)
 
 
 def seed_country_lookup_restcountries():
@@ -23,7 +23,7 @@ def seed_country_lookup_restcountries():
     limit = [100,100,54]
     for i in range(0, len(offset)):
         api = f"https://api.restcountries.com/countries/v5?limit={limit[i]}&offset={offset[i]}&response_fields=names,codes,region,subregion,continents&response_fields_omit=names.translations"
-        data = api_request_handler(api,{'Authorization': f'Bearer {CONFIG_CONSTANTS["REST_COUNTRIES_API_KEY"]}'})
+        data = api_request_handler(api,restcountries_session,{'Authorization': f'Bearer {CONFIG_CONSTANTS["REST_COUNTRIES_API_KEY"]}'})
         for i in range(0,data["data"]["meta"]["count"]):
             columns_data =  {"name":data["data"]["objects"][i]["names"]["common"],
                             "official_name": data["data"]["objects"][i]["names"]["official"],
@@ -197,12 +197,17 @@ def seed_link_types_lookup():
     ("Other","https://","External link that does not fit any other category"),
 ]
     for i in link_types:
-            insert_multiple_columns_data(LinkTypeLookup,{"name":i[0],"base_url":i[1],"description":i[2]})
+            insert_multiple_columns_data(LinkTypeLookup,{"name":i[0],"base_url":i[1],"description":i[2],"ingestion_source":"Claude"})
     logger.info("Links Type Lookup Seeded")
 
-seed_link_types_lookup()
-# seed_artist_type_lookup()
-# seed_alias_types_lookup()
-# seed_locale_lookup()
-# seed_gender_lookup()
-# seed_country_lookup_restcountries()
+
+def seed_all_lookup():
+     
+    seed_link_types_lookup()
+    seed_artist_type_lookup()
+    seed_alias_types_lookup()
+    seed_locale_lookup()
+    seed_gender_lookup()
+    seed_country_lookup_restcountries()
+
+seed_all_lookup()
