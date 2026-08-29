@@ -33,6 +33,7 @@ TMP_DIR = Path(__file__).resolve().parents[2] / "tmp"
 
 class AuditWriter:
     def __init__(self, session, seeder_name: str):
+        self.session = session
         scan_for_orphans()
         orphan_handler(session)
         TMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -108,7 +109,7 @@ class AuditWriter:
 
         logger.info("AuditWriter finished | run_id=%s | status=%s | rows=%d | file=%s",self.run_id,suffix,self._row_counter,final_path.name)
 
-        flush_to_postgres(final_path)
+        flush_to_postgres(self.session, final_path)
 
     @property
     def row_count(self) -> int:

@@ -12,7 +12,7 @@ rename itself — these are unresolved runs with unknown completion state.
 
 import logging
 from pathlib import Path
-from audit_flusher import flush_to_postgres
+from .audit_flusher import flush_to_postgres
 from sqlalchemy.orm import Session
 from schema.base import SESSION_MANAGER
 from mca.core.logger import set_logger
