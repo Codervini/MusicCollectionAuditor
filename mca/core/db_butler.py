@@ -99,7 +99,7 @@ def insert_multiple_columns_data(table, column_value: dict, conflict_columns: li
         result = session.execute(stmt)
         session.commit()
         row_count = result.rowcount
-        logger.debug(row_count)
+        logger.debug(f"Inserted {row_count} row with multiple columns.")
         return row_count
         
 

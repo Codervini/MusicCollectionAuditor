@@ -190,6 +190,7 @@ class SeedArtistsFamily:
 
             similar_artists = discover_similar_artists_lastfm(name,mbid,similar_artist_discovery_limit)
             for name,v in similar_artists.items():
+                print(name,"================",v)
                 pc.set("lastfm",v[0],{"name":name})
                 self.artist_and_mbid[v[0]] = name
                 inserted  = insert_multiple_columns_data(Artists,{"name":name,"mbid":v[0]})
@@ -208,6 +209,7 @@ class SeedArtistsFamily:
                 if parsed:
                     columns_data =  {   "isni": parsed["isni"],
                                         "sort_name":parsed["sort_name"],
+                                        "type_id":parsed["type-id"],
                                         "born_or_formed": parsed["born_or_formed"],
                                         "died_or_disbanded": parsed["died_or_disbanded"],
                                         "gender_id": parsed["gender_id"],
@@ -223,6 +225,7 @@ class SeedArtistsFamily:
                         life_span = data.get("life-span", {})
                         columns_data =  {   "isni": (data["isnis"][0] if len(data["isnis"]) > 0 else ""),
                                             "sort_name":data.get("sort-name", ""),
+                                            "type_id":fetch_id_by_value(ArtistTypeLookup,"alt_type_id",data.get("type-id")),
                                             "born_or_formed": coerce_to_date(life_span.get("begin", None)),
                                             "died_or_disbanded": coerce_to_date(life_span.get("end", None)),
                                             "gender_id": fetch_id_by_value(GenderLookup,"name", data.get("gender", "Unknown")),
@@ -298,22 +301,35 @@ class SeedArtistsFamily:
         logger.info("%d of %d artist's aliases inserted succesfully",success_count,artist_count)
         logger.info("%d of %d artist's aliases not found",empty_count,artist_count)
     def seed_artist_links(self):
-        self._init_data()
+        auditor = AuditWriter(self.session,seeder_name=inspect.currentframe().f_code.co_name)
+        # self._init_data()
         for id, name, mbid in self.id_tb_data:
             parsed = pc.get("musicbrainz",mbid)
             if parsed:
                 relations = parsed["relations"]
-                for link_entity in relations:
-                    if link_entity.get("target",None) == "url" and link_entity["url"].get("resource"):
+                for links in relations:
+                    if links.get("target",None) == "url" and links["url"].get("resource"):
                         data = {"artist_id": id,
-                                "link_type_id": fetch_id_by_value(ArtistLinks,"alt_type_id",link_entity.get("type-id","Other")),
-                                "url": link_entity["url"].get("resource"), 
+                                "link_type_id": fetch_id_by_value(ArtistLinks,"alt_type_id",links.get("type-id","Other")),
+                                "url": links["url"].get("resource"), 
                         }
+                        inserted = insert_multiple_columns_data(ArtistLinks,data)
+                        if inserted:
+                            auditor.record(ArtistAliases.__tablename__,str(id),status="inserted")
+                        else:
+                            auditor.record(ArtistAliases.__tablename__,str(id),status="failed")
+                    else:
+                        logger.warning("Not a valid links object for {name}:{id}:{links}")
+                else:
+                    logger.info(f"Processed {len(relations)} url link objects for {name}:{id}")
+            else:
+                logger.warning("No links found for {name}:{id}")
+        auditor.finish()
 
 
 
-# SeedArtistsFamily().seed_artists(69,969)       
-# SeedArtistsFamily().seed_artist_props_musicbrainz()  
+SeedArtistsFamily().seed_artists(1000,9969)       
+SeedArtistsFamily().seed_artist_props_musicbrainz()  
 SeedArtistsFamily().seed_artist_aliases()     
 # SeedArtistsFamily().seed_artist_aliases()     
 # seed_artist_aliases()
