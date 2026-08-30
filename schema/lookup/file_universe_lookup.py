@@ -35,9 +35,11 @@ class ArtistTypeLookup(Base):
     __tablename__ = "artist_type_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
+    alt_type_id = Column(UUID(True),nullable=False, unique=True)
     mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
+    ingestion_source = Column(String(256), nullable=False)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)   # FK → machines (TBD universe)
