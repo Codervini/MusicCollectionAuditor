@@ -35,7 +35,7 @@ class ArtistTypeLookup(Base):
     __tablename__ = "artist_type_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    alt_type_id = Column(UUID(True),nullable=False, unique=True)
+    alt_type_id = Column(UUID(True),nullable=True, unique=True)
     mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
@@ -277,7 +277,7 @@ class LinkTypeLookup(Base):
     __tablename__ = "link_types_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    alt_type_id     = Column(UUID(True),unique=True)
+    alt_type_id = Column(UUID(True), nullable=True, unique=True)
     #mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     base_url    = Column(Text, nullable=True)                               # e.g. https://open.spotify.com/artist/

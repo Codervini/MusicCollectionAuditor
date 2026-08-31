@@ -152,7 +152,7 @@ def seed_artist_aliases():
         pprint(f"{artist_count}/{len(id_aliases_data)} completed")
     logger.info("%d artist aliases inserted succesfully",len(id_aliases_data))
 
-def seed_artists_links():
+def seed_artists_link():
     ids = get_all_values_of_a_column_in_tb(Artists,"id","created_at")
 
 
@@ -209,7 +209,7 @@ class SeedArtistsFamily:
                 if parsed:
                     columns_data =  {   "isni": parsed["isni"],
                                         "sort_name":parsed["sort_name"],
-                                        "type_id":parsed["type-id"],
+                                        "type_id":parsed["type_id"],
                                         "born_or_formed": parsed["born_or_formed"],
                                         "died_or_disbanded": parsed["died_or_disbanded"],
                                         "gender_id": parsed["gender_id"],
@@ -246,9 +246,9 @@ class SeedArtistsFamily:
                             break
                     updated = update_multiple_columns_data(Artists,"mbid",mbid,columns_data) 
                     if updated:
-                        auditor.record(Artists.__tablename__,str(id),"inserted",status="inserted")
+                        auditor.record(Artists.__tablename__,str(id),status="inserted")
                     else:
-                        auditor.record(Artists.__tablename__,str(id),"inserted",status="failed")
+                        auditor.record(Artists.__tablename__,str(id),status="failed")
                     logger.info(f"UPDATED Artist {name} : {mbid} props ")    
                                
                 columns_data = None
@@ -300,38 +300,43 @@ class SeedArtistsFamily:
         auditor.finish(True)
         logger.info("%d of %d artist's aliases inserted succesfully",success_count,artist_count)
         logger.info("%d of %d artist's aliases not found",empty_count,artist_count)
-    def seed_artist_links(self):
+    def seed_artist_link(self):
         auditor = AuditWriter(self.session,seeder_name=inspect.currentframe().f_code.co_name)
+        
         # self._init_data()
         for id, name, mbid in self.id_tb_data:
             parsed = pc.get("musicbrainz",mbid)
             if parsed:
-                relations = parsed["relations"]
-                for links in relations:
-                    if links.get("target",None) == "url" and links["url"].get("resource"):
+                relations = parsed["raw_mb_response"]["relations"]
+                links_count = 0
+                for link in relations:
+                    print(link)
+                    links_count+=1
+                    if link.get("target-type",None) == "url" and link["url"].get("resource"):
                         data = {"artist_id": id,
-                                "link_type_id": fetch_id_by_value(ArtistLinks,"alt_type_id",links.get("type-id","Other")),
-                                "url": links["url"].get("resource"), 
+                                "link_type_id": (fetch_id_by_value(LinkTypeLookup,"alt_type_id",link.get("type-id")) or fetch_id_by_value(LinkTypeLookup,"name",link.get("type"))),
+                                "url": link["url"].get("resource"), 
                         }
                         inserted = insert_multiple_columns_data(ArtistLinks,data)
+                        print(f"{links_count}/{len(relations)} links of {name} processed")
                         if inserted:
-                            auditor.record(ArtistAliases.__tablename__,str(id),status="inserted")
+                            auditor.record(ArtistLinks.__tablename__,str(id),status="inserted")
                         else:
-                            auditor.record(ArtistAliases.__tablename__,str(id),status="failed")
+                            auditor.record(ArtistLinks.__tablename__,str(id),status="failed")
                     else:
-                        logger.warning("Not a valid links object for {name}:{id}:{links}")
+                        logger.warning(f"{link} is not a valid link object for {name}:{id}")
                 else:
                     logger.info(f"Processed {len(relations)} url link objects for {name}:{id}")
             else:
-                logger.warning("No links found for {name}:{id}")
+                logger.warning(f"No link found for {name}:{id}")
         auditor.finish()
 
 
 
-SeedArtistsFamily().seed_artists(1000,9969)       
+SeedArtistsFamily().seed_artists(10,20)       
 SeedArtistsFamily().seed_artist_props_musicbrainz()  
 SeedArtistsFamily().seed_artist_aliases()     
-# SeedArtistsFamily().seed_artist_aliases()     
+SeedArtistsFamily().seed_artist_link()     
 # seed_artist_aliases()
 # seed_artist_props_musicbrainz()
 # pprint(discover_artists_lastfm(969))

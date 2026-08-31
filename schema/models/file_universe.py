@@ -104,7 +104,7 @@ class ArtistLinks(Base):
     External URLs for an artist — Spotify, Wikipedia, Instagram etc.
     One row per link per artist.
     """
-    __tablename__ = "artist_info_source"
+    __tablename__ = "artist_links"
 
     id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     mca_pid         = Column(String(1024), nullable=True)
