@@ -302,7 +302,6 @@ class SeedArtistsFamily:
         logger.info("%d of %d artist's aliases not found",empty_count,artist_count)
     def seed_artist_link(self):
         auditor = AuditWriter(self.session,seeder_name=inspect.currentframe().f_code.co_name)
-        
         # self._init_data()
         for id, name, mbid in self.id_tb_data:
             parsed = pc.get("musicbrainz",mbid)
@@ -310,13 +309,20 @@ class SeedArtistsFamily:
                 relations = parsed["raw_mb_response"]["relations"]
                 links_count = 0
                 for link in relations:
-                    print(link)
+                    # pprint(link)
                     links_count+=1
                     if link.get("target-type",None) == "url" and link["url"].get("resource"):
                         data = {"artist_id": id,
-                                "link_type_id": (fetch_id_by_value(LinkTypeLookup,"alt_type_id",link.get("type-id")) or fetch_id_by_value(LinkTypeLookup,"name",link.get("type"))),
+                                "link_type_id": (fetch_id_by_value(LinkTypeLookup,"alt_type_id",link.get("type-id")) or fetch_id_by_value(LinkTypeLookup,"name",link.get("type","").title())),
                                 "url": link["url"].get("resource"), 
                         }
+                        # pprint(data)
+                        if not data["link_type_id"]:
+                            insert_multiple_columns_data(LinkTypeLookup,{"name":link.get("type","").title(),
+                                                                         "base_url":"/".join(data["url"].split("/")[:3]+[""]),   
+                                                                         "ingestion_source":inspect.currentframe().f_code.co_name})
+                            data["link_type_id"] = fetch_id_by_value(LinkTypeLookup,"name",link.get("type","").title())
+                            logger.warning(f"New URL name found '{link.get("type","").title()}' for {name}:{id} and inserting new lookup record!")
                         inserted = insert_multiple_columns_data(ArtistLinks,data)
                         print(f"{links_count}/{len(relations)} links of {name} processed")
                         if inserted:
@@ -333,9 +339,9 @@ class SeedArtistsFamily:
 
 
 
-SeedArtistsFamily().seed_artists(10,20)       
-SeedArtistsFamily().seed_artist_props_musicbrainz()  
-SeedArtistsFamily().seed_artist_aliases()     
+# SeedArtistsFamily().seed_artists(10,20)       
+# SeedArtistsFamily().seed_artist_props_musicbrainz()  
+# SeedArtistsFamily().seed_artist_aliases()     
 SeedArtistsFamily().seed_artist_link()     
 # seed_artist_aliases()
 # seed_artist_props_musicbrainz()
