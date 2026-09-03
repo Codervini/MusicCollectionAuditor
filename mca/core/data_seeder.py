@@ -346,7 +346,7 @@ class SeedWorksFamily():
         return api_request_handler(api, musicbrainz_session, mb_header)
     def seed_works_mb(self):
         auditor = AuditWriter(self.session,seeder_name=inspect.currentframe().f_code.co_name) 
-        for id, name, mbid in self.tb_data:
+        for id, name, mbid in self.artist_tb_data:
             if not mbid:
                 logger.warning(f"{name}:{id} has no mbid, skipping quering for works.")
             else:
@@ -368,6 +368,7 @@ class SeedWorksFamily():
                                 "iswc":" ".join(work.get("iswcs")),
                                 "language_id": fetch_id_by_value(WorkTypeLookup,"iso_639_3", work.get("language")),
                                 "mbid":work.get("id"),
+#                                "disambiguation":work.get("disambiguation",None),
                                 "raw_mb_response":initial_data                            
                         }
                         inserted = insert_multiple_columns_data(Works,data) 
@@ -382,6 +383,33 @@ class SeedWorksFamily():
         else:
             logger.info(f"Works table is seeded succesfully for {len(self.artist_tb_data)} artists")
         auditor.finish()
+
+    def seed_work_credits(self):
+        auditor = AuditWriter(self.session,seeder_name=inspect.currentframe().f_code.co_name) 
+        for work in self.tb_data:
+            if not work["mbid"]:
+                logger.warning(f"{work["title"]}:{work["id"]} has no mbid, skipping quering for work credits.")
+            else:
+                work_credit_count = 0
+                api = f"https://musicbrainz.org/ws/2/work/{work['mbid']}?inc=artist-rels&fmt=json"
+                credits =  api_request_handler(api, musicbrainz_session, mb_header)
+                if credits:
+                    for credit in credits["relations"]:
+                        if not credit["artist"]["id"]:
+                            logger.warning(f"{credit} has no Artist MBID, skipping")
+                        else:
+                            data = {"work_id":work["id"],
+                                    "artist_id":fetch_id_by_value(Artists,"mbid",credit["artist"]["id"]),
+                                    "role_id":fetch_id_by_value(ArtistRolesLookup,"alt_type_id",credits["type-id"]),
+                                    "credit_source_id":(fetch_id_by_value(CreditSourceLookup,"name",credits["source-credit"]) or None),
+                                    "credit_source_url": api,
+                                    "credit_order": None,
+                                    "note": None
+                                }
+
+        auditor.finish()
+
+
 
 
             
