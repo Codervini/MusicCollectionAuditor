@@ -337,11 +337,34 @@ class SeedArtistsFamily:
                 logger.warning(f"No link found for {name}:{id}")
         auditor.finish()
 
+class SeedWorksFamily():
+    def __init__(self):
+        self.artist_tb_data = get_all_values_of_multiple_column_in_tb(Artists,["id","name","mbid"],"created_at")
+        self.tb_data = get_all_values_of_multiple_column_in_tb(Works,["id","title","type_id","iswc","language_id","mbid"],"created_at") 
+    def _get_work_data_from_mb(self,mbid,offset,limit=100):
+        api = f"https://musicbrainz.org/ws/2/work?artist={mbid}offset={offset}&limit={limit}&fmt=json"
+        return api_request_handler(api, musicbrainz_session, mb_header)
+    def seed_works_mb(self):
+        auditor = AuditWriter(self.session,seeder_name=inspect.currentframe().f_code.co_name) 
+        for id, name, mbid in self.tb_data:
+            if not mbid:
+                logger.warning(f"{name}:{id} has no mbid, skipping quering for works.")
+            else:
+                data = []
+                initial_data = self._get_work_data_from_mb(mbid,0)
+                data.append([work for work in initial_data["works"]])
+                for offset in range(100,initial_data["work-count"],100):
+                    succesive_data = self._get_work_data_from_mb(mbid,offset)
+                    data.append([work for work in succesive_data["works"]])
+                logger.warning(f"{name}:{id} has no mbid, skipping quering for works.")
+
+            
+            
 
 
-# SeedArtistsFamily().seed_artists(10,20)       
-# SeedArtistsFamily().seed_artist_props_musicbrainz()  
-# SeedArtistsFamily().seed_artist_aliases()     
+SeedArtistsFamily().seed_artists(1000,9999)       
+SeedArtistsFamily().seed_artist_props_musicbrainz()  
+SeedArtistsFamily().seed_artist_aliases()     
 SeedArtistsFamily().seed_artist_link()     
 # seed_artist_aliases()
 # seed_artist_props_musicbrainz()
