@@ -350,13 +350,39 @@ class SeedWorksFamily():
             if not mbid:
                 logger.warning(f"{name}:{id} has no mbid, skipping quering for works.")
             else:
-                data = []
+                works = []
+                work_count = 0
                 initial_data = self._get_work_data_from_mb(mbid,0)
-                data.append([work for work in initial_data["works"]])
+                works.append([work for work in initial_data["works"]])
                 for offset in range(100,initial_data["work-count"],100):
                     succesive_data = self._get_work_data_from_mb(mbid,offset)
-                    data.append([work for work in succesive_data["works"]])
-                logger.warning(f"{name}:{id} has no mbid, skipping quering for works.")
+                    works.append([work for work in succesive_data["works"]])
+                else:
+                    logger.debug(f"Queried succesive data for {name} with MBID:{mbid} with total count {initial_data["work-count"]}")
+                logger.info(f"{initial_data["work-count"]} Works data for Name: {name} MBID:{mbid} initialised, proceeding to process.")
+                for work in works:
+                    work_count +=1
+                    if work.get("title"):
+                        data = {"title": work.get("title"),
+                                "type_id": fetch_id_by_value(WorkTypeLookup,"alt_type_id", work.get("type-id")),
+                                "iswc":" ".join(work.get("iswcs")),
+                                "language_id": fetch_id_by_value(WorkTypeLookup,"iso_639_3", work.get("language")),
+                                "mbid":work.get("id"),
+                                "raw_mb_response":initial_data                            
+                        }
+                        inserted = insert_multiple_columns_data(Works,data) 
+                        if inserted:
+                            auditor.record(Works.__tablename__,str(id),status="inserted")
+                        else:
+                            auditor.record(Works.__tablename__,str(id),status="failed")
+                    else:
+                        logger.warning(f"Invalid work {work_count}/{len(works)}, skipping")  
+                else:
+                    logger.info(f"Processed {work_count}/{len(works)} works of {name}:{id}")
+        else:
+            logger.info(f"Works table is seeded succesfully for {len(self.artist_tb_data)} artists")
+        auditor.finish()
+
 
             
             
