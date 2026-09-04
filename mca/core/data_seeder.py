@@ -339,74 +339,87 @@ class SeedArtistsFamily:
 
 class SeedWorksFamily():
     def __init__(self):
+        self.session = SESSION_MANAGER()
         self.artist_tb_data = get_all_values_of_multiple_column_in_tb(Artists,["id","name","mbid"],"created_at")
-        self.tb_data = get_all_values_of_multiple_column_in_tb(Works,["id","title","type_id","iswc","language_id","mbid"],"created_at") 
+        self.tb_data = get_all_values_of_multiple_column_in_tb(Works,["id","mbid","title","type_id","iswc","language_id"],"created_at") 
     def _get_work_data_from_mb(self,mbid,offset,limit=100):
-        api = f"https://musicbrainz.org/ws/2/work?artist={mbid}offset={offset}&limit={limit}&fmt=json"
+        api = f"https://musicbrainz.org/ws/2/work?artist={mbid}&offset={offset}&limit={limit}&fmt=json"
         return api_request_handler(api, musicbrainz_session, mb_header)
     def seed_works_mb(self):
         auditor = AuditWriter(self.session,seeder_name=inspect.currentframe().f_code.co_name) 
-        for id, name, mbid in self.artist_tb_data:
-            if not mbid:
-                logger.warning(f"{name}:{id} has no mbid, skipping quering for works.")
-            else:
-                works = []
-                work_count = 0
-                initial_data = self._get_work_data_from_mb(mbid,0)
-                works.append([work for work in initial_data["works"]])
-                for offset in range(100,initial_data["work-count"],100):
-                    succesive_data = self._get_work_data_from_mb(mbid,offset)
-                    works.append([work for work in succesive_data["works"]])
+        try:
+            for id, name, mbid in self.artist_tb_data:
+                if not mbid:
+                    logger.warning(f"{name}:{id} has no mbid, skipping quering for works.")
                 else:
-                    logger.debug(f"Queried succesive data for {name} with MBID:{mbid} with total count {initial_data["work-count"]}")
-                logger.info(f"{initial_data["work-count"]} Works data for Name: {name} MBID:{mbid} initialised, proceeding to process.")
-                for work in works:
-                    work_count +=1
-                    if work.get("title"):
-                        data = {"title": work.get("title"),
-                                "type_id": fetch_id_by_value(WorkTypeLookup,"alt_type_id", work.get("type-id")),
-                                "iswc":" ".join(work.get("iswcs")),
-                                "language_id": fetch_id_by_value(WorkTypeLookup,"iso_639_3", work.get("language")),
-                                "mbid":work.get("id"),
-#                                "disambiguation":work.get("disambiguation",None),
-                                "raw_mb_response":initial_data                            
-                        }
-                        inserted = insert_multiple_columns_data(Works,data) 
-                        if inserted:
-                            auditor.record(Works.__tablename__,str(id),status="inserted")
-                        else:
-                            auditor.record(Works.__tablename__,str(id),status="failed")
+                    works = []
+                    work_count = 0
+                    initial_data = self._get_work_data_from_mb(mbid,0)
+                    works.extend([work for work in initial_data["works"]])
+                    # time.sleep(1)
+                    logger.info(f"Total {initial_data["work-count"]}  Works found for Name: {name} | MBID:{mbid}, procceding to query.")
+                    for offset in range(100,initial_data["work-count"],100):
+                        succesive_data = self._get_work_data_from_mb(mbid,offset)
+                        works.extend([work for work in succesive_data["works"]])
+                        # time.sleep(1)
                     else:
-                        logger.warning(f"Invalid work {work_count}/{len(works)}, skipping")  
-                else:
-                    logger.info(f"Processed {work_count}/{len(works)} works of {name}:{id}")
-        else:
-            logger.info(f"Works table is seeded succesfully for {len(self.artist_tb_data)} artists")
+                        logger.debug(f"Queried succesive data for {name} | MBID:{mbid} with total count {initial_data["work-count"]}")
+                    if initial_data["work-count"] == 0:
+                        logger.info(f"0 Works data found for Name: {name} | MBID:{mbid} skipping processing.")
+                        continue
+                    logger.info(f"{initial_data["work-count"]} Works data for Name: {name} | MBID:{mbid} found, proceeding to process.")
+                    for work in works:
+                        work_count +=1
+                        if work.get("title"):
+                            data = {"title": work.get("title"),
+    #                                "type_id": fetch_id_by_value(WorkTypeLookup,"alt_type_id", work.get("type-id")),
+                                    "iswc":" ".join(work.get("iswcs")),
+                                    "language_id": fetch_id_by_value(ISOLanguageLookup,"iso_639_3", work.get("language")),
+                                    "mbid":work.get("id"),
+    #                                "disambiguation":work.get("disambiguation",None),
+                                    "raw_mb_response":initial_data                            
+                            }
+    #                        inserted = insert_multiple_columns_data(Works,data) 
+                            if False:
+                                auditor.record(Works.__tablename__,str(id),status="inserted")
+                            else:
+                                auditor.record(Works.__tablename__,str(id),status="failed")
+                        else:
+                            logger.warning(f"Invalid work {work_count}/{len(works)}, skipping")  
+                    else:
+                        logger.info(f"Processed {work_count}/{len(works)} works of {name}:{id}")
+            else:
+                logger.info(f"Works table is seeded succesfully for {len(self.artist_tb_data)} artists")
+        except Exception as e:
+            logger.critical(f"Exception occured for {name}:{id}: {e}",exc_info=True)
         auditor.finish()
 
     def seed_work_credits(self):
         auditor = AuditWriter(self.session,seeder_name=inspect.currentframe().f_code.co_name) 
-        for work in self.tb_data:
-            if not work["mbid"]:
-                logger.warning(f"{work["title"]}:{work["id"]} has no mbid, skipping quering for work credits.")
-            else:
-                work_credit_count = 0
-                api = f"https://musicbrainz.org/ws/2/work/{work['mbid']}?inc=artist-rels&fmt=json"
-                credits =  api_request_handler(api, musicbrainz_session, mb_header)
-                if credits:
-                    for credit in credits["relations"]:
-                        if not credit["artist"]["id"]:
-                            logger.warning(f"{credit} has no Artist MBID, skipping")
-                        else:
-                            data = {"work_id":work["id"],
-                                    "artist_id":fetch_id_by_value(Artists,"mbid",credit["artist"]["id"]),
-                                    "role_id":fetch_id_by_value(ArtistRolesLookup,"alt_type_id",credits["type-id"]),
-                                    "credit_source_id":(fetch_id_by_value(CreditSourceLookup,"name",credits["source-credit"]) or None),
-                                    "credit_source_url": api,
-                                    "credit_order": None,
-                                    "note": None
-                                }
-
+        try:
+            for work in self.tb_data:
+                if not work[1]: # work["mbid"]
+                    logger.warning(f"{work["title"]}:{work["id"]} has no mbid, skipping quering for work credits.")
+                else:
+                    work_credit_count = 0
+                    api = f"https://musicbrainz.org/ws/2/work/{work['mbid']}?inc=artist-rels&fmt=json"
+                    credits =  api_request_handler(api, musicbrainz_session, mb_header)
+                    if credits:
+                        for credit in credits["relations"]:
+                            if not credit["artist"]["id"]:
+                                logger.warning(f"{credit} has no Artist MBID, skipping")
+                            else:
+                                data = {"work_id":work["id"],
+                                        "artist_id":fetch_id_by_value(Artists,"mbid",credit["artist"]["id"]),
+    #                                    "role_id":fetch_id_by_value(ArtistRolesLookup,"alt_type_id",credits["type-id"]),
+                                        "credit_source_id":(fetch_id_by_value(CreditSourceLookup,"name",credits["source-credit"]) or None),
+                                        "credit_source_url": api,
+                                        "credit_order": None,
+                                        "note": None
+                                    }
+                    time.sleep(1)
+        except:
+            pass
         auditor.finish()
 
 
@@ -416,10 +429,13 @@ class SeedWorksFamily():
             
 
 
-SeedArtistsFamily().seed_artists(1000,9999)       
-SeedArtistsFamily().seed_artist_props_musicbrainz()  
-SeedArtistsFamily().seed_artist_aliases()     
-SeedArtistsFamily().seed_artist_link()     
+# SeedArtistsFamily().seed_artists(1000,9999)       
+# SeedArtistsFamily().seed_artist_props_musicbrainz()  
+# SeedArtistsFamily().seed_artist_aliases()     
+# SeedArtistsFamily().seed_artist_link()     
+
+SeedWorksFamily().seed_works_mb()
+SeedWorksFamily().seed_work_credits()
 # seed_artist_aliases()
 # seed_artist_props_musicbrainz()
 # pprint(discover_artists_lastfm(969))
