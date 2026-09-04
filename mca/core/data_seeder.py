@@ -356,18 +356,16 @@ class SeedWorksFamily():
                     work_count = 0
                     initial_data = self._get_work_data_from_mb(mbid,0)
                     works.extend([work for work in initial_data["works"]])
-                    # time.sleep(1)
-                    logger.info(f"Total {initial_data["work-count"]}  Works found for Name: {name} | MBID:{mbid}, procceding to query.")
+                    logger.info(f"Found {initial_data['work-count']} works for {name} | MBID={mbid}")
                     for offset in range(100,initial_data["work-count"],100):
                         succesive_data = self._get_work_data_from_mb(mbid,offset)
                         works.extend([work for work in succesive_data["works"]])
-                        # time.sleep(1)
                     else:
-                        logger.debug(f"Queried succesive data for {name} | MBID:{mbid} with total count {initial_data["work-count"]}")
+                       logger.debug(f"Finished querying all works for {name} | MBID={mbid} | Total works={initial_data['work-count']}")
                     if initial_data["work-count"] == 0:
-                        logger.info(f"0 Works data found for Name: {name} | MBID:{mbid} skipping processing.")
+                        logger.info(f"No works found for {name} | MBID={mbid}; skipping processing")
                         continue
-                    logger.info(f"{initial_data["work-count"]} Works data for Name: {name} | MBID:{mbid} found, proceeding to process.")
+                    logger.info(f"Starting processing of {initial_data['work-count']} works for {name} | MBID={mbid}")
                     for work in works:
                         work_count +=1
                         if work.get("title"):
@@ -399,27 +397,26 @@ class SeedWorksFamily():
         try:
             for work in self.tb_data:
                 if not work[1]: # work["mbid"]
-                    logger.warning(f"{work["title"]}:{work["id"]} has no mbid, skipping quering for work credits.")
+                    logger.warning(f"{work[2]}:{work[0]} has no mbid, skipping quering for work credits.")
                 else:
                     work_credit_count = 0
-                    api = f"https://musicbrainz.org/ws/2/work/{work['mbid']}?inc=artist-rels&fmt=json"
+                    api = f"https://musicbrainz.org/ws/2/work/{work[1]}?inc=artist-rels&fmt=json"
                     credits =  api_request_handler(api, musicbrainz_session, mb_header)
                     if credits:
                         for credit in credits["relations"]:
                             if not credit["artist"]["id"]:
                                 logger.warning(f"{credit} has no Artist MBID, skipping")
-                            else:
-                                data = {"work_id":work["id"],
-                                        "artist_id":fetch_id_by_value(Artists,"mbid",credit["artist"]["id"]),
-    #                                    "role_id":fetch_id_by_value(ArtistRolesLookup,"alt_type_id",credits["type-id"]),
-                                        "credit_source_id":(fetch_id_by_value(CreditSourceLookup,"name",credits["source-credit"]) or None),
-                                        "credit_source_url": api,
-                                        "credit_order": None,
-                                        "note": None
-                                    }
-                    time.sleep(1)
-        except:
-            pass
+    #                         else:
+    #                             data = {"work_id":work[0],
+    #                                     "artist_id":fetch_id_by_value(Artists,"mbid",credit["artist"]["id"]),
+    # #                                    "role_id":fetch_id_by_value(ArtistRolesLookup,"alt_type_id",credits["type-id"]),
+    #                                     "credit_source_id":(fetch_id_by_value(CreditSourceLookup,"name",credits["source-credit"]) or None),
+    #                                     "credit_source_url": api,
+    #                                     "credit_order": None,
+    #                                     "note": None
+    #                                 }
+        except Exception as e:
+            logger.critical(f"Exception occured for {work[2]}:{work[0]}: {e}",exc_info=True)
         auditor.finish()
 
 
@@ -435,7 +432,7 @@ class SeedWorksFamily():
 # SeedArtistsFamily().seed_artist_link()     
 
 SeedWorksFamily().seed_works_mb()
-SeedWorksFamily().seed_work_credits()
+# SeedWorksFamily().seed_work_credits()
 # seed_artist_aliases()
 # seed_artist_props_musicbrainz()
 # pprint(discover_artists_lastfm(969))
