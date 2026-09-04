@@ -1,11 +1,23 @@
 import logging
 from pathlib import Path
-from datetime import date
+from datetime import date , datetime
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p',
-                    filename=Path("data","log",f"{date.today()}.log"), encoding='utf-8', level=logging.DEBUG)
+log_file = Path("data", "log", f"{date.today()} {datetime.now().strftime("%H:%M:%S")}.log")
+log_file.parent.mkdir(parents=True, exist_ok=True)
+
+formatter = logging.Formatter(fmt="%(asctime)s %(levelname)s:%(message)s",datefmt="%d/%m/%Y %I:%M:%S %p")
+
+# File
+file_handler = logging.FileHandler(log_file,encoding="utf-8")
+file_handler.setFormatter(formatter)
+
+# Console
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+
+# Root logger
+logging.basicConfig(level=logging.INFO,handlers=[file_handler, console_handler,])
 
 
-def set_logger(__name__):
-    return logging.getLogger(__name__)
+def set_logger(name):
+    return logging.getLogger(name)
