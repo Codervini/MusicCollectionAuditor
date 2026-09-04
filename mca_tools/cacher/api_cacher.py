@@ -8,7 +8,7 @@ services = {"musicbrainz", "lastfm", "discogs", "spotify","restcountries"}
 
 CACHE_DIR = Path(".cache/api")
 
-def get_session(service: str, expiry_in_days: int = 7) -> CachedSession:
+def get_session(service: str, expiry_in_days: int = 69) -> CachedSession:
     if service not in services:
         logger.error("Invalid service selected")
         raise ValueError(f"Invalid service: {service}")
