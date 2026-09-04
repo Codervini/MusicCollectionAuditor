@@ -15,10 +15,13 @@ def get_session(service: str, expiry_in_days: int = 69) -> CachedSession:
     
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     logger.info(f"Cached Session for {service} created")
-    return CachedSession(
-        backend="sqlite",
-        cache_name=str(CACHE_DIR / service),
-        expire_after=timedelta(days=expiry_in_days),
-        ignored_parameters=['api_key', 'client_id', 'client_secret'],
-        stale_if_error=True
-    )
+    session =  CachedSession(
+                    backend="sqlite",
+                    cache_name=str(CACHE_DIR / service),
+                    expire_after=timedelta(days=expiry_in_days),
+                    ignored_parameters=['api_key', 'client_id', 'client_secret'],
+                    stale_if_error=True
+            )
+    session.service = service
+    logger.info(f"Cached Session for {service} created")
+    return session
