@@ -142,6 +142,7 @@ class Works(Base):
     iswc            = Column(String(15), nullable=True)                     # International Standard Musical Work Code
     language_id     = Column(SmallInteger, ForeignKey("iso_language_lookup.id"), nullable=True)  # replaces raw language string
     mbid            = Column(String(36), nullable=True)                     # MusicBrainz work ID
+    disambiguation  = Column(Text, nullable=True)    
     raw_mb_response = Column(JSONB, nullable=True)
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
@@ -170,8 +171,7 @@ class WorkCredits(Base):
     artist_id           = Column(UUID(as_uuid=True), ForeignKey("artists.id"), nullable=False)
     role_id             = Column(SmallInteger, ForeignKey("artist_roles_lookup.id"), nullable=False)
     credit_source_id    = Column(SmallInteger, ForeignKey("credit_source_lookup.id"), nullable=True)
-    credit_source_url   = Column(Text, nullable=True)                       # direct URL to credit attribution
-    credit_order        = Column(SmallInteger, nullable=False, server_default=text("1"))
+    credit_source_url   = Column(Text, nullable=True)                     
     note                = Column(Text, nullable=True)
     created_at          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
