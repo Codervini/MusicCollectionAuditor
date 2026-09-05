@@ -70,9 +70,11 @@ class WorkTypeLookup(Base):
     __tablename__ = "work_type_lookup"
 
     id          = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid     = Column(String(1024), nullable=True)
+   # alt_type_id = Column(UUID(True), nullable=True, unique=True)
+    # mca_pid     = Column(String(1024), nullable=True)
     name        = Column(String(64), nullable=False, unique=True)
     description = Column(Text, nullable=True)
+   # ingestion_source = Column(String(256), nullable=False)
     created_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     updated_by  = Column(String(64), ForeignKey("machines.id"), nullable=True)
@@ -396,12 +398,15 @@ class ISOLanguageLookup(Base):
     __tablename__ = "iso_language_lookup"
 
     id              = Column(SmallInteger, primary_key=True, autoincrement=True)
-    mca_pid         = Column(String(1024), nullable=True)
-    name            = Column(String(128), nullable=False, unique=True)      # English name of language
-    iso_639_1       = Column(String(2), nullable=True, unique=True)         # 2-letter (may be null for rare langs)
-    iso_639_2       = Column(String(3), nullable=True)                      # 3-letter bibliographic
-    iso_639_3       = Column(String(3), nullable=True)                      # 3-letter individual
-    is_active       = Column(Boolean, nullable=False, server_default=text("true"))
+    #mca_pid         = Column(String(1024), nullable=True)
+    name            = Column(String(128), nullable=False, unique=True)   # English name of language
+    iso_639_1       = Column(String(2), nullable=True, unique=True)      # 2-letter codes for major languages (may be null for rare langs)
+    iso_639_2       = Column(String(3), nullable=True)                   # Legacy 3-letter, two variants — bibliographic (B-code) and terminological (T-code). 
+                                                                         # Most languages have the same code for both. Set only when B differs.
+
+    iso_639_3       = Column(String(3), nullable=False)                  # 3-letter code, covers all
+    is_active       = Column(Boolean, nullable=False)
+    ingestion_source = Column(String(256), nullable=False)
     created_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at      = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     updated_by      = Column(String(64), ForeignKey("machines.id"), nullable=True)
