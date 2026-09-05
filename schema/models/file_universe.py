@@ -4,7 +4,7 @@ from mca_tools.enums import *
 from sqlalchemy import (
     Column, Text, Boolean, SmallInteger, Integer, Date,
     String, TIMESTAMP, Index, text, Enum,
-    UniqueConstraint, ForeignKey, create_engine
+    UniqueConstraint, ForeignKey, create_engine ,ARRAY
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -139,7 +139,7 @@ class Works(Base):
     mca_pid         = Column(String(1024), nullable=True)
     title           = Column(Text, nullable=False)                          # song name
     type_id         = Column(SmallInteger, ForeignKey("work_type_lookup.id"), nullable=True)
-    iswc            = Column(String(15), nullable=True)                     # International Standard Musical Work Code
+    iswc = Column(ARRAY(String(15)), nullable=True)                     # International Standard Musical Work Code
     language_id     = Column(SmallInteger, ForeignKey("iso_language_lookup.id"), nullable=True)  # replaces raw language string
     mbid            = Column(String(36), nullable=True)                     # MusicBrainz work ID
     disambiguation  = Column(Text, nullable=True)    
