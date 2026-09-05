@@ -23,7 +23,7 @@ def api_request_handler(api, session:CachedSession, header=None, retries=5):
             logger.info(f"API response: {response} | status={response.status_code} | cached={response.from_cache}")
 
             if response.status_code == 404:
-                logger.warning(f"MusicBrainz resource not found | status={response.status_code} | url={api}")
+                logger.warning(f"Resource not found | status={response.status_code} | url={api}")
                 response.raise_for_status()
 
             if response.status_code == 200:
