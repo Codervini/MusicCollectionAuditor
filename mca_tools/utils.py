@@ -22,11 +22,15 @@ def api_request_handler(api, session:CachedSession, header=None, retries=5):
 
             logger.info(f"API response: {response} | status={response.status_code} | cached={response.from_cache}")
 
+            if response.status_code == 404:
+                logger.warning(f"MusicBrainz resource not found | status={response.status_code} | url={api}")
+                response.raise_for_status()
+
             if response.status_code == 200:
                 data = response.json()
                 logger.debug(f"Response data: {data}")
                 if session.service == "musicbrainz" and not response.from_cache:
-                    time.sleep(2)
+                    time.sleep(1.5)
                 return data
             
             logger.warning(f"API request failed | attempt={attempt}/{retries} | status={response.status_code} | url={api}")
