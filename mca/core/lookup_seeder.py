@@ -33,6 +33,8 @@ def seed_country_lookup_restcountries():
                             "continent":", ".join(data["data"]["objects"][i]["continents"])
                             }
             insert_multiple_columns_data(CountryLookup,columns_data)
+    else:
+        logger.info(" Country Lookup Seeded")
 
 def seed_gender_lookup():
     genders = [
@@ -60,7 +62,7 @@ def seed_gender_lookup():
     ]
     for i in genders:
         insert_multiple_columns_data(GenderLookup,{"name":i[0],"description":i[1]})
-    logger.debug("Gender Lookup Seeded")
+    logger.info(" Gender Lookup Seeded")
 
 def seed_artist_type_lookup():
     artist_types = [
@@ -74,7 +76,7 @@ def seed_artist_type_lookup():
     ]
     for i in artist_types:
         insert_multiple_columns_data(ArtistTypeLookup,{"name":i[0],"description":i[1],"alt_type_id":i[2],"ingestion_source":i[3]})
-    logger.debug("Artist Type Lookup Seeded")
+    logger.info(" Artist Type Lookup Seeded")
 
 def seed_alias_types_lookup():
     alias_types = [
@@ -95,7 +97,7 @@ def seed_alias_types_lookup():
     ]
     for i in alias_types:
             insert_multiple_columns_data(AliasTypeLookup,{"name":i[0],"description":i[1]})
-    logger.info("Alias Type Lookup Seeded")
+    logger.info(" Alias Type Lookup Seeded")
 
 
 def seed_locale_lookup():
@@ -115,7 +117,7 @@ def seed_locale_lookup():
             })
         except UnknownLocaleError:
             continue
-    logger.info("Locale Lookup Seeded")
+    logger.info(" Locale Lookup Seeded")
 
 def seed_link_types_lookup():
     link_types = [
@@ -198,11 +200,68 @@ def seed_link_types_lookup():
 ]
     for i in link_types:
             insert_multiple_columns_data(LinkTypeLookup,{"name":i[0],"base_url":i[1],"description":i[2],"alt_type_id":i[3],"ingestion_source":i[4]})
-    logger.info("Links Type Lookup Seeded")
+    logger.info(" Links Type Lookup Seeded")
+
+def seed_work_type_lookup():
+    work_types = [
+    {"name": "Aria",            "description": "A self-contained piece for one voice usually with orchestral accompaniment. Most common inside operas, but also appear in cantatas, oratorios and concert arias."},
+    {"name": "Audio drama",     "description": "A dramatized, purely acoustic performance, broadcast on radio or published on an audio medium (tape, CD, etc.)."},
+    {"name": "Ballet",          "description": "Music composed to be used, together with a choreography, for a ballet dance production."},
+    {"name": "Beijing opera",   "description": "A form of traditional Chinese theatre which combines music, vocal performance, mime, dance, and acrobatics."},
+    {"name": "Cantata",         "description": "A vocal (often choral) composition with an instrumental (usually orchestral) accompaniment, typically in several movements."},
+    {"name": "Concerto",        "description": "A musical work for soloist(s) accompanied by an orchestra."},
+    {"name": "Étude",           "description": "An instrumental musical composition, usually of considerable difficulty, designed to provide practice material for perfecting a particular technical skill."},
+    {"name": "Incidental music","description": "Music written as background for (usually) a theatre play."},
+    {"name": "Madrigal",        "description": "A type of secular vocal music composition. In its original form, it had no instrumental accompaniment, although accompaniment is much more common in later madrigals."},
+    {"name": "Mass",            "description": "A choral composition setting the invariable portions of the Christian Eucharistic liturgy (Kyrie - Gloria - Credo - Sanctus - Benedictus - Agnus Dei) to music."},
+    {"name": "Motet",           "description": "A term that applies to different types of (usually unaccompanied) choral works. What exactly is a motet depends quite a bit on the period."},
+    {"name": "Musical",         "description": "A form of theatrical performance that combines songs, spoken dialogue, acting, and dance."},
+    {"name": "Opera",           "description": "A dramatised work (text + musical score) for singers and orchestra/ensemble. In true operas all dialog is sung, through arias and recitatives, but some styles of opera include spoken dialogue."},
+    {"name": "Operetta",        "description": "A genre of light opera, in terms both of music and subject matter. Operettas are generally short and include spoken parts."},
+    {"name": "Oratorio",        "description": "A large (usually sacred) musical composition including an orchestra, a choir, and soloists. Usually not performed theatrically (it lacks costumes, props and strong character interaction)."},
+    {"name": "Overture",        "description": "Generally, the instrumental introduction to an opera. Independent ('concert') overtures also exist, which are generally programmatic works shorter than a symphonic poem."},
+    {"name": "Partita",         "description": "An instrumental piece composed of a series of variations, very similar to a suite by its current definition."},
+    {"name": "Play",            "description": "A form of literature usually consisting of scripted dialogue between characters, intended for theatrical performance rather than just reading."},
+    {"name": "Poem",            "description": "A literary piece, generally short and in verse, where words are usually chosen for their sound and for the images and ideas they suggest."},
+    {"name": "Prose",           "description": "Literary works written in prose — relatively ordinary language without metrical structure (e.g. novels, short stories, essays)."},
+    {"name": "Quartet",         "description": "A musical composition scored for four voices or instruments."},
+    {"name": "Song",            "description": "A composition for voice, with or without instruments, performed by singing. The most common form in folk and popular music, also fairly common in a classical context ('art songs')."},
+    {"name": "Song-cycle",      "description": "A group of songs designed to be performed in a sequence as a single entity, usually by the same composer using words from the same poet or lyricist."},
+    {"name": "Sonata",          "description": "A general term for small scale (very often solo or solo + keyboard) instrumental works, initially in baroque music."},
+    {"name": "Soundtrack",      "description": "Music that accompanies a film, TV program, videogame, or even book."},
+    {"name": "Suite",           "description": "An ordered set of instrumental or orchestral pieces normally performed in a concert setting. May be extracts from a ballet or opera, or entirely original movements."},
+    {"name": "Symphonic poem",  "description": "A piece of programmatic orchestral music, usually in a single movement, that evokes a painting, landscape, poem, story or other non-musical source."},
+    {"name": "Symphony",        "description": "An extended composition, almost always scored for orchestra without soloists."},
+    {"name": "Zarzuela",        "description": "A Spanish lyric-dramatic work that alternates between spoken and sung scenes, incorporating operatic and popular song, as well as dance."},
+    ]
+    for i in work_types:
+                insert_multiple_columns_data(WorkTypeLookup,{"name":i["name"],"description":i["description"]})
+    logger.info(" Work Type Lookup Seeded")
+
+def seed_iso_language_lookup():
+    import pycountry
+    import importlib.metadata
+
+    version = importlib.metadata.version("pycountry")
+    ingestion_source = f"pycountry v{version}: iso639-3"
+
+    for lang in pycountry.languages:
+        insert_multiple_columns_data(ISOLanguageLookup, {
+            "name":             lang.name,
+            "iso_639_1":        getattr(lang, "alpha_2",      None),
+            "iso_639_2":        getattr(lang, "bibliographic", None) ,
+            "iso_639_3":        lang.alpha_3,
+            "is_active":        lang.type == "L",
+            "ingestion_source": ingestion_source,
+        })
+
+    logger.info(" ISO Language Lookup Seeded")
 
 
 def seed_all_lookup():
      
+    seed_work_type_lookup()
+    seed_iso_language_lookup()
     seed_link_types_lookup()
     seed_artist_type_lookup()
     seed_alias_types_lookup()
